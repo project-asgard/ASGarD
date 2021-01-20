@@ -800,16 +800,17 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
     fk::matrix<TestType> const A_copy = A_gold;
     std::vector<int> ipiv(A_copy.nrows());
     fk::vector<TestType> x = B_gold;
-
+    
     fm::gesv(A_copy, x, ipiv, solve_opts::slate);
-
+    
     TestType const tol_factor =
         std::is_same<TestType, double>::value ? 1e-16 : 1e-7;
-
+    
     rmse_comparison(A_copy, LU_gold, tol_factor);
     rmse_comparison(x, X_gold, tol_factor);
     x = B1_gold;
     fm::getrs(A_copy, x, ipiv, solve_opts::slate);
     rmse_comparison(x, X1_gold, tol_factor);
   }
+
 }

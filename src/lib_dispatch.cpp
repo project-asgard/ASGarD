@@ -11,22 +11,16 @@
 #include <cuda_runtime.h>
 #endif
 
-#ifdef ASGARD_USE_SLATE
-extern "C" void slate_sgesv_(const int *n, const int *nrhs, float *a,
-                             const int *lda, int *ipiv, float *b,
-                             const int *ldb, int *info);
+#ifdef ASGARD_USE_SLATE 
+extern "C" void slate_sgesv_(const int* n, const int* nrhs, float* a, const int* lda, int* ipiv, float* b, const int* ldb, int* info);
 
-extern "C" void slate_dgesv_(const int *n, const int *nrhs, double *a,
-                             const int *lda, int *ipiv, double *b,
-                             const int *ldb, int *info);
+extern "C" void slate_dgesv_(const int* n, const int* nrhs, double* a, const int* lda, int* ipiv, double* b, const int* ldb, int* info);
 
-extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs,
-                              double *A, const int *lda, int *ipiv, double *b,
-                              const int *ldb, int *info);
+extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs, double *A, const int *lda, int *ipiv, double *b,
+           const int *ldb, int *info);
 
-extern "C" void slate_sgetrs_(const char *trans, const int *n, const int *nrhs,
-                              float *A, const int *lda, int *ipiv, float *b,
-                              const int *ldb, int *info);
+extern "C" void slate_sgetrs_(const char *trans, const int *n, const int *nrhs, float *A, const int *lda, int *ipiv, float *b,
+           const int *ldb, int *info);
 #endif
 
 auto const ignore = [](auto ignored) { (void)ignored; };
@@ -966,7 +960,7 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
 #ifdef ASGARD_USE_SLATE
 template<typename P>
 void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
-                int *info)
+          int *info)
 {
   tools::expect(n);
   tools::expect(nrhs);
@@ -995,8 +989,8 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 }
 
 template<typename P>
-void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
-                 P *b, int *ldb, int *info)
+void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
+           int *ldb, int *info)
 {
   tools::expect(trans);
   tools::expect(n);
@@ -1122,14 +1116,14 @@ template void getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
 template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
 #ifdef ASGARD_USE_SLATE
-template void slate_gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv,
-                         double *b, int *ldb, int *info);
-template void slate_gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv,
-                         float *b, int *ldb, int *info);
+template void slate_gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv, double *b,
+                   int *ldb, int *info);
+template void slate_gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv, float *b,
+                   int *ldb, int *info);
 
 template void slate_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
-                          int *ipiv, double *b, int *ldb, int *info);
+                    int *ipiv, double *b, int *ldb, int *info);
 template void slate_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
-                          int *ipiv, float *b, int *ldb, int *info);
+                    int *ipiv, float *b, int *ldb, int *info);
 #endif
 } // namespace lib_dispatch
