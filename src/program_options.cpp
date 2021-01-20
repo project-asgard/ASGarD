@@ -176,14 +176,6 @@ parser::parser(int argc, char **argv)
     {
       solver_str = "direct";
     }
-#ifndef ASFARD_USE_SLATE
-    if (solver_str == "slate")
-    {
-      std::cerr << "Invalid solver choice; ASGarD not built with SLATE option "
-                   "enabled\n";
-      valid = false;
-    }
-#endif
     auto const choice = solver_mapping.find(solver_str);
     if (choice == solver_mapping.end())
     {
