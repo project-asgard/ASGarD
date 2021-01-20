@@ -57,7 +57,6 @@ option (ASGARD_IO_HIGHFIVE "Use the HighFive HDF5 header library for I/O" OFF)
 option (ASGARD_USE_CUDA "Optional CUDA support for asgard" OFF)
 option (ASGARD_USE_OPENMP "Optional openMP support for asgard" ON)
 option (ASGARD_USE_MPI "Optional distributed computing support for asgard" OFF)
-option (ASGARD_USE_SLATE "Use optional slate linear algebra library" OFF)
 option (ASGARD_USE_DOUBLE_PREC "enable or disable double-precision floating point" ON)
 set (ASGARD_TESTING_RANKS "0" CACHE STRING "Override default number of ranks to use for testing")
 
@@ -85,14 +84,12 @@ if(FOUND_MKL GREATER_EQUAL 0)
   set(ASGARD_USE_MKL TRUE)
 endif()
 
-if (ASGARD_USE_SLATE)
-  find_package(slate)
-  set(blaspp_DIR /opt/slate/lib/blaspp/)
-  # Without at least find_package(lapackpp), we get a linking error cannot find "`-llpackpp -llblaspp"
-  find_package(blaspp)
-  set(lapackpp_DIR /opt/slate/lib/lapackpp/)
-  find_package(lapackpp)
-endif ()
+find_package(slate)
+set(blaspp_DIR /opt/slate/lib/blaspp/)
+# Without at least find_package(lapackpp), we get a linking error cannot find "`-llpackpp -llblaspp"
+find_package(blaspp)
+set(lapackpp_DIR /opt/slate/lib/lapackpp/)
+find_package(lapackpp)
 
 if(ASGARD_USE_OPENMP)
   find_package(OpenMP REQUIRED)  
@@ -237,12 +234,7 @@ if (ASGARD_IO_HIGHFIVE)
   target_link_libraries (io PUBLIC highfive tensors PRIVATE hdf5)
 endif ()
 
-if (ASGARD_USE_SLATE)
-  target_link_libraries (lib_dispatch PRIVATE slate_lapack_api)
-  target_compile_definitions (lib_dispatch PUBLIC ASGARD_USE_SLATE)
-else ()
-  target_link_libraries (lib_dispatch PRIVATE ${LINALG_LIBS})
-endif ()
+target_link_libraries (lib_dispatch PUBLIC slate_lapack_api)
 
 if (ASGARD_USE_CUDA)
   target_link_libraries(lib_dispatch PRIVATE ${CUDA_LIBRARIES}

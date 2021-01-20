@@ -337,11 +337,11 @@ implicit_advance(PDE<P> const &pde,
   switch (solver)
   {
   case solve_opts::direct:
-    fm::getrs(A, x, ipiv, solver);
+    fm::getrs(A, x, ipiv);
     return x;
     break;
   case solve_opts::slate:
-    fm::getrs(A, x, ipiv, solver);
+    fm::getrs(A, x, ipiv);
     return x;
     break;
   case solve_opts::gmres:

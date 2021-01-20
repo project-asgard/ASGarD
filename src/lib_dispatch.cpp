@@ -11,13 +11,12 @@
 #include <cuda_runtime.h>
 #endif
 
-#ifdef ASGARD_USE_SLATE 
+
 extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs, double *A, const int *lda, int *ipiv, double *b,
            const int *ldb, int *info);
 
 extern "C" void slate_sgetrs_(const char *trans, const int *n, const int *nrhs, float *A, const int *lda, int *ipiv, float *b,
            const int *ldb, int *info);
-#endif
 
 auto const ignore = [](auto ignored) { (void)ignored; };
 struct device_handler
@@ -953,7 +952,6 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
   }
 }
 
-#ifdef SLATE_USE_ASGARD
 template<typename P>
 void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info)
@@ -984,7 +982,6 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b
     tools::expect(false);
   }
 }
-#endif
 
 template void rotg(float *, float *, float *, float *, resource const resrc);
 template void
@@ -1081,10 +1078,9 @@ template void getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
                     int *ipiv, double *b, int *ldb, int *info);
 template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
-#ifdef SLATE_USE_ASGARD
+
 template void slate_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
                     int *ipiv, double *b, int *ldb, int *info);
 template void slate_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
-#endif
 } // namespace lib_dispatch

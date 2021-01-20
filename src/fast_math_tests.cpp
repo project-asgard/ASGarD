@@ -791,11 +791,7 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
     rmse_comparison(A_copy, LU_gold, tol_factor);
     rmse_comparison(x, X_gold, tol_factor);
     x = B1_gold;
-    fm::getrs(A_copy, x, ipiv, solve_opts::direct);
+    fm::getrs(A_copy, x, ipiv);
     rmse_comparison(x, X1_gold, tol_factor);
-#ifdef ASGARD_USE_SLATE
-    fm::getrs(A_copy, x, ipiv, solve_opts::slate);
-    rmse_comparison(x, X1_gold, tol_factor);
-#endif
   }
 }

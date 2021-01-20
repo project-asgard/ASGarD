@@ -167,9 +167,9 @@ void gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 template<typename P>
 void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info);
-#ifdef ASGARD_USE_SLATE
+
 template<typename P>
 void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info);
-#endif
+
 } // namespace lib_dispatch
