@@ -1,7 +1,6 @@
 #include "lib_dispatch.hpp"
 #include "build_info.hpp"
 #include "tools.hpp"
-
 #include <cmath>
 #include <iostream>
 #include <type_traits>
@@ -10,13 +9,6 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #endif
-
-
-extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs, double *A, const int *lda, int *ipiv, double *b,
-           const int *ldb, int *info);
-
-extern "C" void slate_sgetrs_(const char *trans, const int *n, const int *nrhs, float *A, const int *lda, int *ipiv, float *b,
-           const int *ldb, int *info);
 
 auto const ignore = [](auto ignored) { (void)ignored; };
 struct device_handler
@@ -920,7 +912,6 @@ void gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     tools::expect(false);
   }
 }
-
 template<typename P>
 void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info)
@@ -939,11 +930,11 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
   tools::expect(*n >= 0);
   if constexpr (std::is_same<P, double>::value)
   {
-    slate_dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    slate_sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
   }
   else
   { // not instantiated; should never be reached
