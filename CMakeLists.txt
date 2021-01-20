@@ -346,10 +346,7 @@ if (ASGARD_BUILD_TESTS)
     target_include_directories (${component}-tests PRIVATE ${CMAKE_SOURCE_DIR}/testing)
     target_include_directories (${component}-tests PRIVATE ${CMAKE_BINARY_DIR})
     target_link_libraries (${component}-tests PRIVATE ${component} tests_general)
-    if (ASGARD_USE_SLATE)
-      target_compile_definitions (${component}-tests PUBLIC ASGARD_USE_SLATE)
-    endif ()
-
+    
     if (ASGARD_IO_HIGHFIVE AND "${component}" STREQUAL "io")
       target_link_libraries (io-tests PRIVATE highfive hdf5 tensors)
     endif ()

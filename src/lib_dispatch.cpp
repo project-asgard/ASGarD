@@ -12,10 +12,6 @@
 #endif
 
 #ifdef ASGARD_USE_SLATE 
-extern "C" void slate_sgesv_(const int* n, const int* nrhs, float* a, const int* lda, int* ipiv, float* b, const int* ldb, int* info);
-
-extern "C" void slate_dgesv_(const int* n, const int* nrhs, double* a, const int* lda, int* ipiv, double* b, const int* ldb, int* info);
-
 extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs, double *A, const int *lda, int *ipiv, double *b,
            const int *ldb, int *info);
 
@@ -959,36 +955,6 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
 
 #ifdef ASGARD_USE_SLATE
 template<typename P>
-void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
-          int *info)
-{
-  tools::expect(n);
-  tools::expect(nrhs);
-  tools::expect(A);
-  tools::expect(lda);
-  tools::expect(ipiv);
-  tools::expect(info);
-  tools::expect(b);
-  tools::expect(ldb);
-  tools::expect(*ldb >= 1);
-  tools::expect(*lda >= 1);
-  tools::expect(*n >= 0);
-  if constexpr (std::is_same<P, double>::value)
-  {
-    slate_dgesv_(n, nrhs, A, lda, ipiv, b, ldb, info);
-  }
-  else if constexpr (std::is_same<P, float>::value)
-  {
-    slate_sgesv_(n, nrhs, A, lda, ipiv, b, ldb, info);
-  }
-  else
-  { // not instantiated; should never be reached
-    std::cerr << "gesv not implemented for non-floating types" << '\n';
-    tools::expect(false);
-  }
-}
-
-template<typename P>
 void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info)
 {
@@ -1116,11 +1082,6 @@ template void getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
 template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
 #ifdef ASGARD_USE_SLATE
-template void slate_gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv, double *b,
-                   int *ldb, int *info);
-template void slate_gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv, float *b,
-                   int *ldb, int *info);
-
 template void slate_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
                     int *ipiv, double *b, int *ldb, int *info);
 template void slate_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
