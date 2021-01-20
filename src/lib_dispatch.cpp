@@ -939,37 +939,6 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
   tools::expect(*n >= 0);
   if constexpr (std::is_same<P, double>::value)
   {
-    dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
-  }
-  else if constexpr (std::is_same<P, float>::value)
-  {
-    sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
-  }
-  else
-  { // not instantiated; should never be reached
-    std::cerr << "getrs not implemented for non-floating types" << '\n';
-    assert(false);
-  }
-}
-
-template<typename P>
-void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
-           int *ldb, int *info)
-{
-  assert(trans);
-  assert(n);
-  assert(nrhs);
-  assert(A);
-  assert(lda);
-  assert(ipiv);
-  assert(info);
-  assert(b);
-  assert(ldb);
-  assert(*ldb >= 1);
-  assert(*lda >= 1);
-  assert(*n >= 0);
-  if constexpr (std::is_same<P, double>::value)
-  {
     slate_dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
   }
   else if constexpr (std::is_same<P, float>::value)
@@ -1079,8 +1048,4 @@ template void getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
 template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
 
-template void slate_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
-                    int *ipiv, double *b, int *ldb, int *info);
-template void slate_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
-                    int *ipiv, float *b, int *ldb, int *info);
 } // namespace lib_dispatch

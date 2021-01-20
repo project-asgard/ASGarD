@@ -168,8 +168,4 @@ template<typename P>
 void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info);
 
-template<typename P>
-void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
-           int *ldb, int *info);
-
 } // namespace lib_dispatch
