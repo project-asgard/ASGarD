@@ -958,18 +958,18 @@ template<typename P>
 void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info)
 {
-  tools::expect(trans);
-  tools::expect(n);
-  tools::expect(nrhs);
-  tools::expect(A);
-  tools::expect(lda);
-  tools::expect(ipiv);
-  tools::expect(info);
-  tools::expect(b);
-  tools::expect(ldb);
-  tools::expect(*ldb >= 1);
-  tools::expect(*lda >= 1);
-  tools::expect(*n >= 0);
+  assert(trans);
+  assert(n);
+  assert(nrhs);
+  assert(A);
+  assert(lda);
+  assert(ipiv);
+  assert(info);
+  assert(b);
+  assert(ldb);
+  assert(*ldb >= 1);
+  assert(*lda >= 1);
+  assert(*n >= 0);
   if constexpr (std::is_same<P, double>::value)
   {
     slate_dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
