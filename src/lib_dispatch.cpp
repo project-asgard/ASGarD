@@ -953,7 +953,7 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
   }
 }
 
-#ifdef ASGARD_USE_SLATE
+#ifdef SLATE_USE_ASGARD
 template<typename P>
 void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info)
@@ -1081,7 +1081,7 @@ template void getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
                     int *ipiv, double *b, int *ldb, int *info);
 template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
-#ifdef ASGARD_USE_SLATE
+#ifdef SLATE_USE_ASGARD
 template void slate_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
                     int *ipiv, double *b, int *ldb, int *info);
 template void slate_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
