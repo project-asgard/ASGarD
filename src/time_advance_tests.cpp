@@ -5,6 +5,7 @@
 #include "tests_general.hpp"
 #include "time_advance.hpp"
 #include "transformations.hpp"
+#include <fenv.h>
 #include <numeric>
 #include <random>
 #include <sstream>
@@ -26,6 +27,7 @@ template<typename P>
 void time_advance_test(parser const &parse, std::string const &filepath,
                        P const tolerance_factor = 1e-6)
 {
+  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
   auto const num_ranks = get_num_ranks();
   if (num_ranks > 1 && parse.using_implicit())
   {
@@ -87,86 +89,6 @@ static std::string get_level_string(fk::vector<int> const &levels)
                          [](std::string const &accum, int const lev) {
                            return accum + std::to_string(lev) + "_";
                          });
-}
-
-TEMPLATE_TEST_CASE("time advance - diffusion 2", "[time_advance]", double,
-                   float)
-{
-  TestType const cfl           = 0.01;
-  std::string const pde_choice = "diffusion_2";
-  int const num_dims           = 2;
-
-  SECTION("diffusion2, explicit, sparse grid, level 2, degree 2")
-  {
-    int const degree = 2;
-    int const level  = 2;
-
-    TestType const tol_factor =
-        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
-
-    std::string const gold_base = "../testing/generated-inputs/time_advance/"
-                                  "diffusion2_sg_l2_d2_t";
-
-    auto const full_grid = false;
-    parser const parse(
-        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
-        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
-
-    time_advance_test(parse, gold_base, tol_factor);
-  }
-
-  SECTION("diffusion2, explicit, sparse grid, level 3, degree 3")
-  {
-    int const degree = 3;
-    int const level  = 3;
-    TestType const tol_factor =
-        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
-
-    std::string const gold_base = "../testing/generated-inputs/time_advance/"
-                                  "diffusion2_sg_l3_d3_t";
-
-    auto const full_grid = false;
-    parser const parse(
-        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
-        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
-
-    time_advance_test(parse, gold_base, tol_factor);
-  }
-
-  SECTION("diffusion2, explicit, sparse grid, level 4, degree 4")
-  {
-    int const degree = 4;
-    int const level  = 4;
-    TestType const tol_factor =
-        std::is_same<TestType, double>::value ? 1e-12 : 1e-1;
-    std::string const gold_base = "../testing/generated-inputs/time_advance/"
-                                  "diffusion2_sg_l4_d4_t";
-
-    auto const full_grid = false;
-    parser const parse(
-        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
-        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
-
-    time_advance_test(parse, gold_base, tol_factor);
-  }
-
-  SECTION("diffusion2, explicit/non-uniform level, sparse grid, degree 2")
-  {
-    int const degree = 2;
-    TestType const tol_factor =
-        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
-
-    fk::vector<int> const levels{4, 5};
-    std::string const gold_base = "../testing/generated-inputs/time_advance/"
-                                  "diffusion2_sg_l" +
-                                  get_level_string(levels) + "d2_t";
-
-    auto const full_grid = false;
-    parser const parse(pde_choice, levels, degree, cfl, full_grid,
-                       parser::DEFAULT_MAX_LEVEL, num_steps);
-
-    time_advance_test(parse, gold_base, tol_factor);
-  }
 }
 
 TEST_CASE("adaptive time advance")
@@ -284,6 +206,156 @@ TEST_CASE("adaptive time advance")
     time_advance_test(parse, gold_base, tol_factor);
   }
 }
+
+// no float testing for this problem - coefficient values are out of float range
+TEMPLATE_TEST_CASE("time advance - mirror 3", "[time_advance]", double)
+{
+  TestType const cfl = 0.01;
+  int const num_dims = 3;
+
+  SECTION("mirror3 case 1, explicit, sparse grid, level 3, degree 5")
+  {
+    std::string const pde_choice = "mirror_3_case1";
+
+    int const degree = 5;
+    int const level  = 3;
+
+    TestType const tol_factor = 1e-11;
+
+    std::string const gold_base = "../testing/generated-inputs/time_advance/"
+                                  "mirror3_sg_l3_d5_case1_t";
+
+    auto const full_grid = false;
+    parser const parse(
+        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
+        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
+
+    time_advance_test(parse, gold_base, tol_factor);
+  }
+
+  SECTION("mirror3 case 2, explicit, sparse grid, level 3, degree 5")
+  {
+    std::string const pde_choice = "mirror_3_case2";
+
+    int const degree = 5;
+    int const level  = 3;
+
+    TestType const tol_factor =
+        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
+
+    std::string const gold_base = "../testing/generated-inputs/time_advance/"
+                                  "mirror3_sg_l3_d5_case2_t";
+
+    auto const full_grid = false;
+    parser const parse(
+        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
+        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
+
+    time_advance_test(parse, gold_base, tol_factor);
+  }
+
+  SECTION("mirror3 case 1, explicit, sparse grid, level 3, degree 5")
+  {
+    std::string const pde_choice = "mirror_3_case3";
+
+    int const degree = 5;
+    int const level  = 3;
+
+    TestType const tol_factor =
+        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
+
+    std::string const gold_base = "../testing/generated-inputs/time_advance/"
+                                  "mirror3_sg_l3_d5_case3_t";
+
+    auto const full_grid = false;
+    parser const parse(
+        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
+        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
+
+    time_advance_test(parse, gold_base, tol_factor);
+  }
+}
+
+TEMPLATE_TEST_CASE("time advance - diffusion 2", "[time_advance]", double,
+                   float)
+{
+  TestType const cfl           = 0.01;
+  std::string const pde_choice = "diffusion_2";
+  int const num_dims           = 2;
+
+  SECTION("diffusion2, explicit, sparse grid, level 2, degree 2")
+  {
+    int const degree = 2;
+    int const level  = 2;
+
+    TestType const tol_factor =
+        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
+
+    std::string const gold_base = "../testing/generated-inputs/time_advance/"
+                                  "diffusion2_sg_l2_d2_t";
+
+    auto const full_grid = false;
+    parser const parse(
+        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
+        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
+
+    time_advance_test(parse, gold_base, tol_factor);
+  }
+
+  SECTION("diffusion2, explicit, sparse grid, level 3, degree 3")
+  {
+    int const degree = 3;
+    int const level  = 3;
+    TestType const tol_factor =
+        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
+
+    std::string const gold_base = "../testing/generated-inputs/time_advance/"
+                                  "diffusion2_sg_l3_d3_t";
+
+    auto const full_grid = false;
+    parser const parse(
+        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
+        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
+
+    time_advance_test(parse, gold_base, tol_factor);
+  }
+
+  SECTION("diffusion2, explicit, sparse grid, level 4, degree 4")
+  {
+    int const degree = 4;
+    int const level  = 4;
+    TestType const tol_factor =
+        std::is_same<TestType, double>::value ? 1e-12 : 1e-1;
+    std::string const gold_base = "../testing/generated-inputs/time_advance/"
+                                  "diffusion2_sg_l4_d4_t";
+
+    auto const full_grid = false;
+    parser const parse(
+        pde_choice, fk::vector<int>(std::vector<int>(num_dims, level)), degree,
+        cfl, full_grid, parser::DEFAULT_MAX_LEVEL, num_steps);
+
+    time_advance_test(parse, gold_base, tol_factor);
+  }
+
+  SECTION("diffusion2, explicit/non-uniform level, sparse grid, degree 2")
+  {
+    int const degree = 2;
+    TestType const tol_factor =
+        std::is_same<TestType, double>::value ? 1e-15 : 1e-5;
+
+    fk::vector<int> const levels{4, 5};
+    std::string const gold_base = "../testing/generated-inputs/time_advance/"
+                                  "diffusion2_sg_l" +
+                                  get_level_string(levels) + "d2_t";
+
+    auto const full_grid = false;
+    parser const parse(pde_choice, levels, degree, cfl, full_grid,
+                       parser::DEFAULT_MAX_LEVEL, num_steps);
+
+    time_advance_test(parse, gold_base, tol_factor);
+  }
+}
+
 TEMPLATE_TEST_CASE("time advance - diffusion 1", "[time_advance]", double,
                    float)
 {

@@ -25,6 +25,7 @@
 #include "pde/pde_fokkerplanck1_pitch_C.hpp"
 #include "pde/pde_fokkerplanck1_pitch_E.hpp"
 #include "pde/pde_fokkerplanck2_complete.hpp"
+#include "pde/pde_mirror3.hpp"
 #include "tensors.hpp"
 
 //
@@ -74,6 +75,12 @@ std::unique_ptr<PDE<P>> make_PDE(parser const &cli_input)
     return std::make_unique<PDE_diffusion_1d<P>>(cli_input);
   case PDE_opts::diffusion_2:
     return std::make_unique<PDE_diffusion_2d<P>>(cli_input);
+  case PDE_opts::mirror_3_case1:
+    return std::make_unique<PDE_mirror_3d<P, PDE_case_opts::case0>>(cli_input);
+  case PDE_opts::mirror_3_case2:
+    return std::make_unique<PDE_mirror_3d<P, PDE_case_opts::case1>>(cli_input);
+  case PDE_opts::mirror_3_case3:
+    return std::make_unique<PDE_mirror_3d<P, PDE_case_opts::case2>>(cli_input);
   default:
     std::cout << "Invalid pde choice" << std::endl;
     exit(-1);
@@ -145,6 +152,15 @@ make_PDE(PDE_opts const pde_choice, int const level = parser::NO_USER_VALUE,
 
     case PDE_opts::diffusion_2:
       return fk::vector<int>(std::vector<int>(2, level));
+
+    case PDE_opts::mirror_3_case1:
+      return fk::vector<int>(std::vector<int>(3, level));
+
+    case PDE_opts::mirror_3_case2:
+      return fk::vector<int>(std::vector<int>(3, level));
+
+    case PDE_opts::mirror_3_case3:
+      return fk::vector<int>(std::vector<int>(3, level));
 
     default:
       std::cout << "Invalid pde choice" << std::endl;

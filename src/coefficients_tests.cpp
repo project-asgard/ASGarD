@@ -31,7 +31,6 @@ void test_coefficients(parser const &parse, std::string const &gold_path,
       auto const filename = filename_base + std::to_string(t + 1) + "_" +
                             std::to_string(d + 1) + ".dat";
       auto const gold = fk::matrix<P>(read_matrix_from_txt_file(filename));
-
       auto const full_coeff = pde->get_coefficients(t, d).clone_onto_host();
 
       auto const &dim = pde->get_dimensions()[d];
@@ -39,7 +38,6 @@ void test_coefficients(parser const &parse, std::string const &gold_path,
           dim.get_degree() * fm::two_raised_to(dim.get_level());
       fk::matrix<P, mem_type::const_view> const test(
           full_coeff, 0, degrees_freedom_1d - 1, 0, degrees_freedom_1d - 1);
-
       rmse_comparison(gold, test, tol_factor);
     }
   }
@@ -315,6 +313,60 @@ TEMPLATE_TEST_CASE("fokkerplanck2_complete terms", "[coefficients]", double,
   SECTION("non-uniform levels: 4, 2, deg 4")
   {
     auto const levels = fk::vector<int>{4, 2};
+    auto const degree = 4;
+    parser const test_parse(pde_choice, levels, degree);
+    test_coefficients<TestType>(test_parse, gold_path, tol_factor);
+  }
+}
+
+TEMPLATE_TEST_CASE("mirror 3 case 1 terms", "[coefficients]", double, float)
+{
+  auto const gold_path = "../testing/generated-inputs/coefficients/"
+                         "mirror_3_case1_coefficients";
+
+  auto const pde_choice = PDE_opts::mirror_3_case1;
+  TestType const tol_factor =
+      std::is_same<TestType, double>::value ? 1e-14 : 1e-4;
+
+  SECTION("level 3, degree 4")
+  {
+    auto const levels = fk::vector<int>{3, 3, 3};
+    auto const degree = 4;
+    parser const test_parse(pde_choice, levels, degree);
+    test_coefficients<TestType>(test_parse, gold_path, tol_factor);
+  }
+}
+
+TEMPLATE_TEST_CASE("mirror 3 case 2 terms", "[coefficients]", double, float)
+{
+  auto const gold_path = "../testing/generated-inputs/coefficients/"
+                         "mirror_3_case2_coefficients";
+
+  auto const pde_choice = PDE_opts::mirror_3_case2;
+  TestType const tol_factor =
+      std::is_same<TestType, double>::value ? 1e-14 : 1e-4;
+
+  SECTION("level 3, degree 4")
+  {
+    auto const levels = fk::vector<int>{3, 3, 3};
+    auto const degree = 4;
+    parser const test_parse(pde_choice, levels, degree);
+    test_coefficients<TestType>(test_parse, gold_path, tol_factor);
+  }
+}
+
+TEMPLATE_TEST_CASE("mirror 3 case 3 terms", "[coefficients]", double, float)
+{
+  auto const gold_path = "../testing/generated-inputs/coefficients/"
+                         "mirror_3_case3_coefficients";
+
+  auto const pde_choice = PDE_opts::mirror_3_case3;
+  TestType const tol_factor =
+      std::is_same<TestType, double>::value ? 1e-14 : 1e-4;
+
+  SECTION("level 3, degree 4")
+  {
+    auto const levels = fk::vector<int>{3, 3, 3};
     auto const degree = 4;
     parser const test_parse(pde_choice, levels, degree);
     test_coefficients<TestType>(test_parse, gold_path, tol_factor);

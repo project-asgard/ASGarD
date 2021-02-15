@@ -39,6 +39,9 @@ enum class PDE_opts
   fokkerplanck_2d_complete,
   diffusion_1,
   diffusion_2,
+  mirror_3_case1,
+  mirror_3_case2,
+  mirror_3_case3,
   // FIXME will need to add the user supplied PDE choice
 };
 
@@ -117,7 +120,19 @@ static pde_map_t const pde_mapping = {
                                    PDE_opts::diffusion_1)},
     {"diffusion_2",
      PDE_descriptor("2D (1x-1y) heat equation. df/dt = d^2 f/dx^2 + d^2 f/dy^2",
-                    PDE_opts::diffusion_2)}};
+                    PDE_opts::diffusion_2)},
+
+    {"mirror_3_case1", PDE_descriptor("3D magnetic mirror from the FP paper, "
+                                      "maxwellian offset and different temp.",
+                                      PDE_opts::mirror_3_case1)},
+    {"mirror_3_case2", PDE_descriptor("3D magnetic mirror from the FP paper, "
+                                      "max. no offset and different temp.",
+                                      PDE_opts::mirror_3_case2)},
+    {"mirror_3_case3",
+     PDE_descriptor(
+         "3D magnetic mirror from the FP paper, max. offset and same temp.",
+         PDE_opts::mirror_3_case3)},
+};
 
 // class to parse command line input
 class parser

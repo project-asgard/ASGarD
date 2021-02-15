@@ -39,7 +39,9 @@ public:
       : PDE<P>(cli_input, num_dims_, num_sources_, num_terms_, dimensions_,
                terms_, sources_, exact_vector_funcs_, exact_scalar_func_,
                get_dt_, do_poisson_solve_, has_analytic_soln_)
-  {}
+  {
+    static_assert(user_case < PDE_case_opts::case2, "unsupported case");
+  }
 
 private:
   // these fields will be checked against provided functions to make sure
