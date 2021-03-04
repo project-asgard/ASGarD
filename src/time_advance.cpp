@@ -339,49 +339,34 @@ implicit_advance(PDE<P> const &pde,
   return x;
 }
 
-template fk::vector<double> adaptive_advance(
-    method const step_method, PDE<double> &pde,
-    adapt::distributed_grid<double> &adaptive_grid,
-    basis::wavelet_transform<double, resource::host> const &transformer,
-    options const &program_opts, fk::vector<double> const &x, double const time,
-    int const workspace_size_MB, bool const update_system);
+#define X(T)                                                             \
+  template fk::vector<T> adaptive_advance(                               \
+      method const step_method, PDE<T> &pde,                             \
+      adapt::distributed_grid<T> &adaptive_grid,                         \
+      basis::wavelet_transform<T, resource::host> const &transformer,    \
+      options const &program_opts, fk::vector<T> const &x, T const time, \
+      int const workspace_size_MB, bool const update_system);
+#include "type_list_float.inc"
+#undef X
 
-template fk::vector<float> adaptive_advance(
-    method const step_method, PDE<float> &pde,
-    adapt::distributed_grid<float> &adaptive_grid,
-    basis::wavelet_transform<float, resource::host> const &transformer,
-    options const &program_opts, fk::vector<float> const &x, float const time,
-    int const workspace_size_MB, bool const update_system);
+#define X(T)                                                              \
+  template fk::vector<T> explicit_advance(                                \
+      PDE<T> const &pde, adapt::distributed_grid<T> const &adaptive_grid, \
+      basis::wavelet_transform<T, resource::host> const &transformer,     \
+      options const &program_opts,                                        \
+      std::array<unscaled_bc_parts<T>, 2> const &unscaled_parts,          \
+      fk::vector<T> const &x, int const workspace_size_MB, T const time);
+#include "type_list_float.inc"
+#undef X
 
-template fk::vector<double> explicit_advance(
-    PDE<double> const &pde,
-    adapt::distributed_grid<double> const &adaptive_grid,
-    basis::wavelet_transform<double, resource::host> const &transformer,
-    options const &program_opts,
-    std::array<unscaled_bc_parts<double>, 2> const &unscaled_parts,
-    fk::vector<double> const &x, int const workspace_size_MB,
-    double const time);
-
-template fk::vector<float> explicit_advance(
-    PDE<float> const &pde, adapt::distributed_grid<float> const &adaptive_grid,
-    basis::wavelet_transform<float, resource::host> const &transformer,
-    options const &program_opts,
-    std::array<unscaled_bc_parts<float>, 2> const &unscaled_parts,
-    fk::vector<float> const &x, int const workspace_size_MB, float const time);
-
-template fk::vector<double> implicit_advance(
-    PDE<double> const &pde,
-    adapt::distributed_grid<double> const &adaptive_grid,
-    basis::wavelet_transform<double, resource::host> const &transformer,
-    std::array<unscaled_bc_parts<double>, 2> const &unscaled_parts,
-    fk::vector<double> const &host_space, double const time,
-    solve_opts const solver, bool const update_system);
-
-template fk::vector<float> implicit_advance(
-    PDE<float> const &pde, adapt::distributed_grid<float> const &adaptive_grid,
-    basis::wavelet_transform<float, resource::host> const &transformer,
-    std::array<unscaled_bc_parts<float>, 2> const &unscaled_parts,
-    fk::vector<float> const &x, float const time, solve_opts const solver,
-    bool const update_system);
+#define X(T)                                                                  \
+  template fk::vector<T> implicit_advance(                                    \
+      PDE<T> const &pde, adapt::distributed_grid<T> const &adaptive_grid,     \
+      basis::wavelet_transform<T, resource::host> const &transformer,         \
+      std::array<unscaled_bc_parts<T>, 2> const &unscaled_parts,              \
+      fk::vector<T> const &host_space, T const time, solve_opts const solver, \
+      bool const update_system);
+#include "type_list_float.inc"
+#undef X
 
 } // namespace time_advance

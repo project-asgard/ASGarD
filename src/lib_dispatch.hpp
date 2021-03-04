@@ -25,6 +25,7 @@ extern "C"
      --------------------------------------------------------------------------
   */
   double dnrm2_(int *n, double *x, int *incx);
+  double dnrm2_(int *n, double *x, int *incx);
   float snrm2_(int *n, float *x, int *incx);
 
   /* --------------------------------------------------------------------------

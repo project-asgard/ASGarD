@@ -1026,110 +1026,102 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
 }
 #endif
 
-template void rotg(float *, float *, float *, float *, resource const resrc);
-template void
-rotg(double *, double *, double *, double *, resource const resrc);
+#define X(T) template void rotg(T *, T *, T *, T *, resource const resrc);
+#include "type_list_float.inc"
+#undef X
 
-template float nrm2(int *n, float *x, int *incx, resource const resrc);
-template double nrm2(int *n, double *x, int *incx, resource const resrc);
+#define X(T) template T nrm2(int *n, T *x, int *incx, resource const resrc);
+#include "type_list_float.inc"
+#undef X
 
-template void
-copy(int *n, float *x, int *incx, float *y, int *incy, resource const resrc);
-template void
-copy(int *n, double *x, int *incx, double *y, int *incy, resource const resrc);
-template void
-copy(int *n, int *x, int *incx, int *y, int *incy, resource const resrc);
+#define X(T)                                                   \
+  template void copy(int *n, T *x, int *incx, T *y, int *incy, \
+                     resource const resrc);
+#include "type_list.inc"
+#undef X
 
-template float
-dot(int *n, float *x, int *incx, float *y, int *incy, resource const resrc);
-template double
-dot(int *n, double *x, int *incx, double *y, int *incy, resource const resrc);
-template int
-dot(int *n, int *x, int *incx, int *y, int *incy, resource const resrc);
+#define X(T)                                               \
+  template T dot(int *n, T *x, int *incx, T *y, int *incy, \
+                 resource const resrc);
+#include "type_list.inc"
+#undef X
 
-template void axpy(int *n, float *alpha, float *x, int *incx, float *y,
-                   int *incy, resource const resrc);
-template void axpy(int *n, double *alpha, double *x, int *incx, double *y,
-                   int *incy, resource const resrc);
-template void axpy(int *n, int *alpha, int *x, int *incx, int *y, int *incy,
-                   resource const resrc);
+#define X(T)                                                             \
+  template void axpy(int *n, T *alpha, T *x, int *incx, T *y, int *incy, \
+                     resource const resrc);
+#include "type_list.inc"
+#undef X
 
-template void
-scal(int *n, float *alpha, float *x, int *incx, resource const resrc);
-template void
-scal(int *n, double *alpha, double *x, int *incx, resource const resrc);
-template void scal(int *n, int *alpha, int *x, int *incx, resource const resrc);
+#define X(T) \
+  template void scal(int *n, T *alpha, T *x, int *incx, resource const resrc);
+#include "type_list.inc"
+#undef X
 
-template void gemv(char const *trans, int *m, int *n, float *alpha, float *A,
-                   int *lda, float *x, int *incx, float *beta, float *y,
-                   int *incy, resource const resrc);
-template void gemv(char const *trans, int *m, int *n, double *alpha, double *A,
-                   int *lda, double *x, int *incx, double *beta, double *y,
-                   int *incy, resource const resrc);
-template void gemv(char const *trans, int *m, int *n, int *alpha, int *A,
-                   int *lda, int *x, int *incx, int *beta, int *y, int *incy,
-                   resource const resrc);
+#define X(T)                                                              \
+  template void gemv(char const *trans, int *m, int *n, T *alpha, T *A,   \
+                     int *lda, T *x, int *incx, T *beta, T *y, int *incy, \
+                     resource const resrc);
+#include "type_list.inc"
+#undef X
 
-template void gemm(char const *transa, char const *transb, int *m, int *n,
-                   int *k, float *alpha, float *A, int *lda, float *B, int *ldb,
-                   float *beta, float *C, int *ldc, resource const resrc);
-template void gemm(char const *transa, char const *transb, int *m, int *n,
-                   int *k, double *alpha, double *A, int *lda, double *B,
-                   int *ldb, double *beta, double *C, int *ldc,
-                   resource const resrc);
-template void gemm(char const *transa, char const *transb, int *m, int *n,
-                   int *k, int *alpha, int *A, int *lda, int *B, int *ldb,
-                   int *beta, int *C, int *ldc, resource const resrc);
+#define X(T)                                                                 \
+  template void gemm(char const *transa, char const *transb, int *m, int *n, \
+                     int *k, T *alpha, T *A, int *lda, T *B, int *ldb,       \
+                     T *beta, T *C, int *ldc, resource const resrc);
+#include "type_list.inc"
+#undef X
 
-template void getrf(int *m, int *n, float *A, int *lda, int *ipiv, int *info,
-                    resource const resrc);
-template void getrf(int *m, int *n, double *A, int *lda, int *ipiv, int *info,
-                    resource const resrc);
+#define X(T)                                                                \
+  template void getrf(int *m, int *n, T *A, int *lda, int *ipiv, int *info, \
+                      resource const resrc);
+#include "type_list_float.inc"
+#undef X
 
-template void getri(int *n, float *A, int *lda, int *ipiv, float *work,
-                    int *lwork, int *info, resource const resrc);
-template void getri(int *n, double *A, int *lda, int *ipiv, double *work,
-                    int *lwork, int *info, resource const resrc);
+#define X(T)                                                                  \
+  template void getri(int *n, T *A, int *lda, int *ipiv, T *work, int *lwork, \
+                      int *info, resource const resrc);
+#include "type_list_float.inc"
+#undef X
 
-template void batched_gemm(float **const &a, int *lda, char const *transa,
-                           float **const &b, int *ldb, char const *transb,
-                           float **const &c, int *ldc, int *m, int *n, int *k,
-                           float *alpha, float *beta, int *num_batch,
-                           resource const resrc);
+#define X(T)                                                              \
+  template void batched_gemm(                                             \
+      T **const &a, int *lda, char const *transa, T **const &b, int *ldb, \
+      char const *transb, T **const &c, int *ldc, int *m, int *n, int *k, \
+      T *alpha, T *beta, int *num_batch, resource const resrc);
+#include "type_list_float.inc"
+#undef X
 
-template void batched_gemm(double **const &a, int *lda, char const *transa,
-                           double **const &b, int *ldb, char const *transb,
-                           double **const &c, int *ldc, int *m, int *n, int *k,
-                           double *alpha, double *beta, int *num_batch,
-                           resource const resrc);
-template void batched_gemv(float **const &a, int *lda, char const *transa,
-                           float **const &x, float **const &y, int *m, int *n,
-                           float *alpha, float *beta, int *num_batch,
-                           resource const resrc);
+#define X(T)                                                             \
+  template void batched_gemv(T **const &a, int *lda, char const *transa, \
+                             T **const &x, T **const &y, int *m, int *n, \
+                             T *alpha, T *beta, int *num_batch,          \
+                             resource const resrc);
+#include "type_list_float.inc"
+#undef X
 
-template void batched_gemv(double **const &a, int *lda, char const *transa,
-                           double **const &x, double **const &y, int *m, int *n,
-                           double *alpha, double *beta, int *num_batch,
-                           resource const resrc);
+#define X(T)                                                             \
+  template void gesv(int *n, int *nrhs, T *A, int *lda, int *ipiv, T *b, \
+                     int *ldb, int *info);
+#include "type_list_float.inc"
+#undef X
 
-template void gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv, double *b,
-                   int *ldb, int *info);
-template void gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv, float *b,
-                   int *ldb, int *info);
+#define X(T)                                                          \
+  template void getrs(char *trans, int *n, int *nrhs, T *A, int *lda, \
+                      int *ipiv, T *b, int *ldb, int *info);
+#include "type_list_float.inc"
+#undef x
 
-template void getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
-                    int *ipiv, double *b, int *ldb, int *info);
-template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
-                    int *ipiv, float *b, int *ldb, int *info);
 #ifdef ASGARD_USE_SLATE
-template void slate_gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv,
-                         double *b, int *ldb, int *info);
-template void slate_gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv,
-                         float *b, int *ldb, int *info);
+#define X(T)                                                                   \
+  template void slate_gesv(int *n, int *nrhs, T *A, int *lda, int *ipiv, T *b, \
+                           int *ldb, int *info);
+#include "type_list_float.inc"
+#undef X
 
-template void slate_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
-                          int *ipiv, double *b, int *ldb, int *info);
-template void slate_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
-                          int *ipiv, float *b, int *ldb, int *info);
+#define X(T)                                                                \
+  template void slate_getrs(char *trans, int *n, int *nrhs, T *A, int *lda, \
+                            int *ipiv, T *b, int *ldb, int *info);
+#include "type_list_float.inc"
+#undef X
 #endif
 } // namespace lib_dispatch

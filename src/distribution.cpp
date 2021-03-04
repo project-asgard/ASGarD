@@ -1035,50 +1035,43 @@ redistribute_vector(fk::vector<P> const &old_x,
   return y;
 }
 
-template void reduce_results(fk::vector<float> const &source,
-                             fk::vector<float> &dest,
-                             distribution_plan const &plan, int const my_rank);
-template void reduce_results(fk::vector<double> const &source,
-                             fk::vector<double> &dest,
-                             distribution_plan const &plan, int const my_rank);
+#define X(T)                                            \
+  template void reduce_results(                         \
+      fk::vector<T> const &source, fk::vector<T> &dest, \
+      distribution_plan const &plan, int const my_rank);
+#include "type_list_float.inc"
+#undef X
 
-template void exchange_results(fk::vector<float> const &source,
-                               fk::vector<float> &dest, int const segment_size,
-                               distribution_plan const &plan,
-                               int const my_rank);
-template void exchange_results(fk::vector<double> const &source,
-                               fk::vector<double> &dest, int const segment_size,
-                               distribution_plan const &plan,
-                               int const my_rank);
+#define X(T)                                                                  \
+  template void exchange_results(fk::vector<T> const &source,                 \
+                                 fk::vector<T> &dest, int const segment_size, \
+                                 distribution_plan const &plan,               \
+                                 int const my_rank);
+#include "type_list_float.inc"
+#undef X
 
-template std::array<fk::vector<float>, 2>
-gather_errors(float const root_mean_squared, float const relative);
+#define X(T)                                           \
+  template std::array<fk::vector<T>, 2> gather_errors( \
+      T const root_mean_squared, T const relative);
+#include "type_list_float.inc"
+#undef X
 
-template std::array<fk::vector<double>, 2>
-gather_errors(double const root_mean_squared, double const relative);
+#define X(T)                                                          \
+  template std::vector<T> gather_results(                             \
+      fk::vector<T> const &my_results, distribution_plan const &plan, \
+      int const my_rank, int const element_segment_size);
+#include "type_list_float.inc"
+#undef X
 
-template std::vector<float> gather_results(fk::vector<float> const &my_results,
-                                           distribution_plan const &plan,
-                                           int const my_rank,
-                                           int const element_segment_size);
-template std::vector<double>
-gather_results(fk::vector<double> const &my_results,
-               distribution_plan const &plan, int const my_rank,
-               int const element_segment_size);
+#define X(T) \
+  template T get_global_max(T const my_max, distribution_plan const &plan);
+#include "type_list_float.inc"
+#undef X
 
-template float
-get_global_max(float const my_max, distribution_plan const &plan);
-template double
-get_global_max(double const my_max, distribution_plan const &plan);
-
-template fk::vector<float>
-redistribute_vector(fk::vector<float> const &old_x,
-                    distribution_plan const &old_plan,
-                    distribution_plan const &new_plan,
-                    std::map<int64_t, grid_limits> const &elem_remap);
-
-template fk::vector<double>
-redistribute_vector(fk::vector<double> const &old_x,
-                    distribution_plan const &old_plan,
-                    distribution_plan const &new_plan,
-                    std::map<int64_t, grid_limits> const &elem_remap);
+#define X(T)                                                         \
+  template fk::vector<T> redistribute_vector(                        \
+      fk::vector<T> const &old_x, distribution_plan const &old_plan, \
+      distribution_plan const &new_plan,                             \
+      std::map<int64_t, grid_limits> const &elem_remap);
+#include "type_list_float.inc"
+#undef X

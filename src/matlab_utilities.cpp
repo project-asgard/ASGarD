@@ -470,44 +470,45 @@ fk::matrix<P> reshape(fk::matrix<P, mem> mat, int const nrow, int const ncol)
 }
 
 // explicit instantiations
-template fk::vector<float> linspace(float const start, float const end,
-                                    unsigned int const num_elems = 100);
-template fk::vector<double> linspace(double const start, double const end,
-                                     unsigned int const num_elems = 100);
+#define X(T)                                                  \
+  template fk::vector<T> linspace(T const start, T const end, \
+                                  unsigned int const num_elems = 100);
+#include "type_list_float.inc"
+#undef X
 
-template fk::matrix<int> eye(int const M = 1);
-template fk::matrix<float> eye(int const M = 1);
-template fk::matrix<double> eye(int const M = 1);
-template fk::matrix<int> eye(int const M, int const N);
-template fk::matrix<float> eye(int const M, int const N);
-template fk::matrix<double> eye(int const M, int const N);
+#define X(T) template fk::matrix<T> eye(int const M = 1);
+#include "type_list.inc"
+#undef X
 
-template int polyval(fk::vector<int> const p, int const x);
-template float polyval(fk::vector<float> const p, float const x);
-template double polyval(fk::vector<double> const p, double const x);
+#define X(T) template fk::matrix<T> eye(int const M, int const N);
+#include "type_list.inc"
+#undef X
 
-template float l2_norm(fk::vector<float> const &vec);
-template double l2_norm(fk::vector<double> const &vec);
-template float inf_norm(fk::vector<float> const &vec);
-template double inf_norm(fk::vector<double> const &vec);
+#define X(T) template T polyval(fk::vector<T> const p, T const x);
+#include "type_list.inc"
+#undef X
 
-template fk::vector<int>
-polyval(fk::vector<int> const p, fk::vector<int> const x);
-template fk::vector<float>
-polyval(fk::vector<float> const p, fk::vector<float> const x);
-template fk::vector<double>
-polyval(fk::vector<double> const p, fk::vector<double> const x);
+#define X(T) template T l2_norm(fk::vector<T> const &vec);
+#include "type_list_float.inc"
+#undef X
 
-template fk::matrix<int>
-horz_matrix_concat(std::vector<fk::matrix<int>> const matrices);
-template fk::matrix<float>
-horz_matrix_concat(std::vector<fk::matrix<float>> const matrices);
-template fk::matrix<double>
-horz_matrix_concat(std::vector<fk::matrix<double>> const matrices);
+#define X(T) template T inf_norm(fk::vector<T> const &vec);
+#include "type_list_float.inc"
+#undef X
 
-template fk::matrix<double>
-reshape(fk::matrix<double> mat, int const nrow, int const ncol);
-template fk::matrix<float>
-reshape(fk::matrix<float> mat, int const nrow, int const ncol);
-template fk::matrix<int>
-reshape(fk::matrix<int> mat, int const nrow, int const ncol);
+#define X(T) \
+  template fk::vector<T> polyval(fk::vector<T> const p, fk::vector<T> const x);
+#include "type_list.inc"
+#undef X
+
+#define X(T)                                 \
+  template fk::matrix<T> horz_matrix_concat( \
+      std::vector<fk::matrix<T>> const matrices);
+#include "type_list.inc"
+#undef X
+
+#define X(T)                                                        \
+  template fk::matrix<T> reshape(fk::matrix<T> mat, int const nrow, \
+                                 int const ncol);
+#include "type_list.inc"
+#undef X

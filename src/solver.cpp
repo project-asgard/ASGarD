@@ -165,14 +165,12 @@ P simple_gmres(fk::matrix<P> const &A, fk::vector<P> &x, fk::vector<P> const &b,
   return error;
 }
 
-template float simple_gmres(fk::matrix<float> const &A, fk::vector<float> &x,
-                            fk::vector<float> const &b,
-                            fk::matrix<float> const &M, int const restart,
-                            int const max_iter, float const tolerance);
-
-template double simple_gmres(fk::matrix<double> const &A, fk::vector<double> &x,
-                             fk::vector<double> const &b,
-                             fk::matrix<double> const &M, int const restart,
-                             int const max_iter, double const tolerance);
+#define X(T)                                                              \
+  template T simple_gmres(fk::matrix<T> const &A, fk::vector<T> &x,       \
+                          fk::vector<T> const &b, fk::matrix<T> const &M, \
+                          int const restart, int const max_iter,          \
+                          T const tolerance);
+#include "type_list_float.inc"
+#undef X
 
 } // namespace solver

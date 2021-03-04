@@ -245,41 +245,34 @@ combine_dimensions(int const degree, elements::table const &table,
 }
 
 /* explicit instantiations */
-template fk::matrix<double>
-recursive_kron(std::vector<fk::matrix<double, mem_type::view>> &kron_matrices,
-               int const index);
+#define X(T)                                                     \
+  template fk::matrix<T> recursive_kron(                         \
+      std::vector<fk::matrix<T, mem_type::view>> &kron_matrices, \
+      int const index);
+#include "type_list_float.inc"
+#undef X
 
-template fk::matrix<float>
-recursive_kron(std::vector<fk::matrix<float, mem_type::view>> &kron_matrices,
-               int const index);
+#define X(T)                                                   \
+  template std::vector<fk::matrix<T>> gen_realspace_transform( \
+      PDE<T> const &pde,                                       \
+      basis::wavelet_transform<T, resource::host> const &transformer);
+#include "type_list_float.inc"
+#undef X
 
-template std::vector<fk::matrix<double>> gen_realspace_transform(
-    PDE<double> const &pde,
-    basis::wavelet_transform<double, resource::host> const &transformer);
+#define X(T)                                                                   \
+  template void wavelet_to_realspace(                                          \
+      PDE<T> const &pde, fk::vector<T> const &wave_space,                      \
+      elements::table const &table,                                            \
+      basis::wavelet_transform<T, resource::host> const &transformer,          \
+      int const memory_limit_MB,                                               \
+      std::array<fk::vector<T, mem_type::view, resource::host>, 2> &workspace, \
+      fk::vector<T> &real_space);
+#include "type_list_float.inc"
+#undef X
 
-template std::vector<fk::matrix<float>> gen_realspace_transform(
-    PDE<float> const &pde,
-    basis::wavelet_transform<float, resource::host> const &transformer);
-
-template void wavelet_to_realspace(
-    PDE<double> const &pde, fk::vector<double> const &wave_space,
-    elements::table const &table,
-    basis::wavelet_transform<double, resource::host> const &transformer,
-    int const memory_limit_MB,
-    std::array<fk::vector<double, mem_type::view, resource::host>, 2>
-        &workspace,
-    fk::vector<double> &real_space);
-template void wavelet_to_realspace(
-    PDE<float> const &pde, fk::vector<float> const &wave_space,
-    elements::table const &table,
-    basis::wavelet_transform<float, resource::host> const &transformer,
-    int const memory_limit_MB,
-    std::array<fk::vector<float, mem_type::view, resource::host>, 2> &workspace,
-    fk::vector<float> &real_space);
-
-template fk::vector<double>
-combine_dimensions(int const, elements::table const &, int const, int const,
-                   std::vector<fk::vector<double>> const &, double const = 1.0);
-template fk::vector<float>
-combine_dimensions(int const, elements::table const &, int const, int const,
-                   std::vector<fk::vector<float>> const &, float const = 1.0);
+#define X(T)                                                    \
+  template fk::vector<T> combine_dimensions(                    \
+      int const, elements::table const &, int const, int const, \
+      std::vector<fk::vector<T>> const &, T const = 1.0);
+#include "type_list_float.inc"
+#undef X

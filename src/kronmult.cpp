@@ -385,24 +385,20 @@ execute(PDE<P> const &pde, elements::table const &elem_table,
   return fx_dev.clone_onto_host();
 }
 
-template std::vector<element_subgrid>
-decompose(PDE<float> const &pde, elements::table const &elem_table,
-          element_subgrid const &my_subgrid, int const workspace_size_MB);
+#define X(T)                                                \
+  template std::vector<element_subgrid> decompose(          \
+      PDE<T> const &pde, elements::table const &elem_table, \
+      element_subgrid const &my_subgrid, int const workspace_size_MB);
+#include "type_list_float.inc"
+#undef X
 
-template std::vector<element_subgrid>
-decompose(PDE<double> const &pde, elements::table const &elem_table,
-          element_subgrid const &my_subgrid, int const workspace_size_MB);
-
-template fk::vector<float, mem_type::owner, resource::host>
-execute(PDE<float> const &pde, elements::table const &elem_table,
-        options const &program_options, element_subgrid const &my_subgrid,
-        int const workspace_size_MB,
-        fk::vector<float, mem_type::owner, resource::host> const &x);
-
-template fk::vector<double, mem_type::owner, resource::host>
-execute(PDE<double> const &pde, elements::table const &elem_table,
-        options const &program_options, element_subgrid const &my_subgrid,
-        int const workspace_size_MB,
-        fk::vector<double, mem_type::owner, resource::host> const &x);
+#define X(T)                                                             \
+  template fk::vector<T, mem_type::owner, resource::host> execute(       \
+      PDE<T> const &pde, elements::table const &elem_table,              \
+      options const &program_options, element_subgrid const &my_subgrid, \
+      int const workspace_size_MB,                                       \
+      fk::vector<T, mem_type::owner, resource::host> const &x);
+#include "type_list_float.inc"
+#undef X
 
 } // namespace kronmult

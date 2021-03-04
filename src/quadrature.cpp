@@ -356,16 +356,16 @@ legendre_weights(int const degree, P const lower_bound, P const upper_bound,
 }
 
 // explicit instatiations
-template std::array<fk::matrix<float>, 2>
-legendre(fk::vector<float> const domain, int const degree,
-         legendre_normalization const norm);
-template std::array<fk::matrix<double>, 2>
-legendre(fk::vector<double> const domain, int const degree,
-         legendre_normalization const norm);
+#define X(T)                                        \
+  template std::array<fk::matrix<T>, 2> legendre(   \
+      fk::vector<T> const domain, int const degree, \
+      legendre_normalization const norm);
+#include "type_list_float.inc"
+#undef X
 
-template std::array<fk::vector<float>, 2>
-legendre_weights(int const degree, float const lower_bound,
-                 float const upper_bound, bool const use_degree_points);
-template std::array<fk::vector<double>, 2>
-legendre_weights(int const degree, double const lower_bound,
-                 double const upper_bound, bool const use_degree_points);
+#define X(T)                                                      \
+  template std::array<fk::vector<T>, 2> legendre_weights(         \
+      int const degree, T const lower_bound, T const upper_bound, \
+      bool const use_degree_points);
+#include "type_list_float.inc"
+#undef X

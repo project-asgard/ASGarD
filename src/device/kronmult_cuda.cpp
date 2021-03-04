@@ -378,36 +378,29 @@ void call_kronmult(int const n, P *x_ptrs[], P *output_ptrs[], P *work_ptrs[],
 #endif
 }
 
-template void stage_inputs_kronmult(float const *const x,
-                                    float *const workspace, int const num_elems,
-                                    int const num_copies);
+#define X(T)                                                                \
+  template void stage_inputs_kronmult(T const *const x, T *const workspace, \
+                                      int const num_elems,                  \
+                                      int const num_copies);
+#include "../type_list_float.inc"
+#undef X
 
-template void stage_inputs_kronmult(double const *const x,
-                                    double *const workspace,
-                                    int const num_elems, int const num_copies);
+#define X(T)                                                             \
+  template void prepare_kronmult(                                        \
+      int const *const flattened_table, T *const *const operators,       \
+      int const operator_lda, T *const element_x, T *const element_work, \
+      T *const fx, T **const operator_ptrs, T **const work_ptrs,         \
+      T **const input_ptrs, T **const output_ptrs, int const degree,     \
+      int const num_terms, int const num_dims, int const elem_row_start, \
+      int const elem_row_stop, int const elem_col_start,                 \
+      int const elem_col_stop);
+#include "../type_list_float.inc"
+#undef X
 
-template void prepare_kronmult(
-    int const *const flattened_table, float *const *const operators,
-    int const operator_lda, float *const element_x, float *const element_work,
-    float *const fx, float **const operator_ptrs, float **const work_ptrs,
-    float **const input_ptrs, float **const output_ptrs, int const degree,
-    int const num_terms, int const num_dims, int const elem_row_start,
-    int const elem_row_stop, int const elem_col_start, int const elem_col_stop);
-
-template void prepare_kronmult(
-    int const *const flattened_table, double *const *const operators,
-    int const operator_lda, double *const element_x, double *const element_work,
-    double *const fx, double **const operator_ptrs, double **const work_ptrs,
-    double **const input_ptrs, double **const output_ptrs, int const degree,
-    int const num_terms, int const num_dims, int const elem_row_start,
-    int const elem_row_stop, int const elem_col_start, int const elem_col_stop);
-
-template void call_kronmult(int const n, float *x_ptrs[], float *output_ptrs[],
-                            float *work_ptrs[],
-                            float const *const operator_ptrs[], int const lda,
-                            int const num_krons, int const num_dims);
-
-template void call_kronmult(int const n, double *x_ptrs[],
-                            double *output_ptrs[], double *work_ptrs[],
-                            double const *const operator_ptrs[], int const lda,
-                            int const num_krons, int const num_dims);
+#define X(T)                                                                  \
+  template void call_kronmult(int const n, T *x_ptrs[], T *output_ptrs[],     \
+                              T *work_ptrs[], T const *const operator_ptrs[], \
+                              int const lda, int const num_krons,             \
+                              int const num_dims);
+#include "../type_list_float.inc"
+#undef X

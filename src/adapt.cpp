@@ -342,7 +342,8 @@ fk::vector<P> distributed_grid<P>::remove_elements(
   return y;
 }
 
-template class distributed_grid<float>;
-template class distributed_grid<double>;
+#define X(T) template class distributed_grid<T>;
+#include "type_list_float.inc"
+#undef X
 
 } // namespace adapt

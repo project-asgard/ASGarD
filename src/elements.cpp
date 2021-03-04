@@ -362,7 +362,9 @@ fk::matrix<int> table::get_cell_index_set(fk::vector<int> const &level_tuple)
   return cell_index_set;
 }
 
-template table::table(options const &program_opts, PDE<float> const &pde);
-template table::table(options const &program_opts, PDE<double> const &pde);
+#define X(T) \
+  template table::table(options const &program_opts, PDE<T> const &pde);
+#include "type_list_float.inc"
+#undef X
 
 } // namespace elements

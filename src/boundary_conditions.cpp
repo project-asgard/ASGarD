@@ -302,56 +302,45 @@ std::vector<fk::vector<P>> boundary_conditions::generate_partial_bcs(
   return partial_bc_vecs;
 }
 
-/* explicit instantiations */
-template std::array<unscaled_bc_parts<double>, 2>
-boundary_conditions::make_unscaled_bc_parts(
-    PDE<double> const &pde, elements::table const &table,
-    basis::wavelet_transform<double, resource::host> const &transformer,
-    int const start_element, int const stop_element, double const t_init = 0);
+#define X(T)                                                          \
+  template std::array<unscaled_bc_parts<T>, 2>                        \
+  boundary_conditions::make_unscaled_bc_parts(                        \
+      PDE<T> const &pde, elements::table const &table,                \
+      basis::wavelet_transform<T, resource::host> const &transformer, \
+      int const start_element, int const stop_element, T const t_init = 0);
+#include "type_list_float.inc"
+#undef X
 
-template std::array<unscaled_bc_parts<float>, 2>
-boundary_conditions::make_unscaled_bc_parts(
-    PDE<float> const &pde, elements::table const &table,
-    basis::wavelet_transform<float, resource::host> const &transformer,
-    int const start_element, int const stop_element, float const t_init = 0);
+#define X(T)                                                         \
+  template fk::vector<T> boundary_conditions::generate_scaled_bc(    \
+      unscaled_bc_parts<T> const &left_bc_parts,                     \
+      unscaled_bc_parts<T> const &right_bc_parts, PDE<T> const &pde, \
+      int const start_element, int const stop_element, T const time);
+#include "type_list_float.inc"
+#undef X
 
-template fk::vector<double> boundary_conditions::generate_scaled_bc(
-    unscaled_bc_parts<double> const &left_bc_parts,
-    unscaled_bc_parts<double> const &right_bc_parts, PDE<double> const &pde,
-    int const start_element, int const stop_element, double const time);
-template fk::vector<float> boundary_conditions::generate_scaled_bc(
-    unscaled_bc_parts<float> const &left_bc_parts,
-    unscaled_bc_parts<float> const &right_bc_parts, PDE<float> const &pde,
-    int const start_element, int const stop_element, float const time);
+#define X(T)                                                                   \
+  template fk::vector<T> boundary_conditions::compute_left_boundary_condition( \
+      g_func_type const g_func, T const time, dimension<T> const &dim,         \
+      vector_func<T> const bc_func);
+#include "type_list_float.inc"
+#undef X
 
-template fk::vector<double>
-boundary_conditions::compute_left_boundary_condition(
-    g_func_type const g_func, double const time, dimension<double> const &dim,
-    vector_func<double> const bc_func);
-template fk::vector<float> boundary_conditions::compute_left_boundary_condition(
-    g_func_type const g_func, float const time, dimension<float> const &dim,
-    vector_func<float> const bc_func);
+#define X(T)                                                           \
+  template fk::vector<T>                                               \
+  boundary_conditions::compute_right_boundary_condition(               \
+      g_func_type const g_func, T const time, dimension<T> const &dim, \
+      vector_func<T> const bc_func);
+#include "type_list_float.inc"
+#undef X
 
-template fk::vector<double>
-boundary_conditions::compute_right_boundary_condition(
-    g_func_type const g_func, double const time, dimension<double> const &dim,
-    vector_func<double> const bc_func);
-template fk::vector<float>
-boundary_conditions::compute_right_boundary_condition(
-    g_func_type const g_func, float const time, dimension<float> const &dim,
-    vector_func<float> const bc_func);
-
-template std::vector<fk::vector<double>>
-boundary_conditions::generate_partial_bcs(
-    std::vector<dimension<double>> const &dimensions, int const d_index,
-    std::vector<vector_func<double>> const &bc_funcs,
-    basis::wavelet_transform<double, resource::host> const &transformer,
-    double const time, std::vector<partial_term<double>> const &partial_terms,
-    int const p_index, fk::vector<double> &&trace_bc);
-template std::vector<fk::vector<float>>
-boundary_conditions::generate_partial_bcs(
-    std::vector<dimension<float>> const &dimensions, int const d_index,
-    std::vector<vector_func<float>> const &bc_funcs,
-    basis::wavelet_transform<float, resource::host> const &transformer,
-    float const time, std::vector<partial_term<float>> const &partial_terms,
-    int const p_index, fk::vector<float> &&trace_bc);
+#define X(T)                                                           \
+  template std::vector<fk::vector<T>>                                  \
+  boundary_conditions::generate_partial_bcs(                           \
+      std::vector<dimension<T>> const &dimensions, int const d_index,  \
+      std::vector<vector_func<T>> const &bc_funcs,                     \
+      basis::wavelet_transform<T, resource::host> const &transformer,  \
+      T const time, std::vector<partial_term<T>> const &partial_terms, \
+      int const p_index, fk::vector<T> &&trace_bc);
+#include "type_list_float.inc"
+#undef X
