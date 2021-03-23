@@ -58,6 +58,7 @@ option (ASGARD_USE_CUDA "Optional CUDA support for asgard" OFF)
 option (ASGARD_USE_OPENMP "Optional openMP support for asgard" ON)
 option (ASGARD_USE_MPI "Optional distributed computing support for asgard" OFF)
 option (ASGARD_USE_SLATE "Use optional slate linear algebra library" OFF)
+option (ASGARD_USE_TIMEMORY "Use optional TiMemory profiling library" ON)
 option (ASGARD_USE_DOUBLE_PREC "enable or disable double-precision floating point" ON)
 set (ASGARD_TESTING_RANKS "0" CACHE STRING "Override default number of ranks to use for testing")
 
@@ -320,6 +321,15 @@ if (PROFILE_DEPS)
   add_dependencies (asgard ${PROFILE_DEPS})
 endif ()
 target_link_libraries (asgard PRIVATE ${PROFILE_LIBS})
+
+if (ASGARD_USE_TIMEMORY)
+    find_package(timemory REQUIRED
+        COMPONENTS headers cxx OPTIONAL_COMPONENTS mpip-library)
+    target_link_libraries(tools PRIVATE timemory::timemory)
+    target_link_libraries(asgard PRIVATE timemory::timemory)
+    list(APPEND CMAKE_INSTALL_RPATH ${timemory_ROOT_DIR}/lib ${timemory_ROOT_DIR}/lib64)
+    message(STATUS "${CMAKE_INSTALL_RPATH}")
+endif()
 
 # Generate header file from src/build_info.hpp.in
 configure_file(

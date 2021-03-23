@@ -90,5 +90,13 @@ private:
 };
 
 extern simple_timer timer;
-
 } // namespace tools
+namespace profiling
+{
+void start(const std::string &_name);
+void stop(const std::string &_name);
+void begin_iteration(const std::string &_name);
+// data-size is some normalization value for int[10] vs. double[20], etc.
+void end_iteration(const std::string &_name, int64_t _data_size,
+                   int64_t _num_itr);
+} // namespace profiling
