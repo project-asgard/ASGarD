@@ -12,21 +12,30 @@
 #endif
 
 #ifdef ASGARD_USE_SLATE
-extern "C" void slate_sgesv_(const int *n, const int *nrhs, float *a,
-                             const int *lda, int *ipiv, float *b,
-                             const int *ldb, int *info);
+// extern "C" void slate_sgesv_(const int *n, const int *nrhs, float *a,
+//                             const int *lda, int *ipiv, float *b,
+//                             const int *ldb, int *info);
 
-extern "C" void slate_dgesv_(const int *n, const int *nrhs, double *a,
-                             const int *lda, int *ipiv, double *b,
-                             const int *ldb, int *info);
+// extern "C" void slate_dgesv_(const int *n, const int *nrhs, double *a,
+//                             const int *lda, int *ipiv, double *b,
+//                             const int *ldb, int *info);
 
-extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs,
-                              double *A, const int *lda, int *ipiv, double *b,
-                              const int *ldb, int *info);
+extern "C" void psgesv_(int *n, int *nrhs, float *a, int *ia, int *ja,
+                        int *desca, int *ipiv, float *b, int *ib, int *jb,
+                        int *descb, int *info);
+extern "C" void pdgesv_(int *n, int *nrhs, double *a, int *ia, int *ja,
+                        int *desca, int *ipiv, double *b, int *ib, int *jb,
+                        int *descb, int *info);
 
-extern "C" void slate_sgetrs_(const char *trans, const int *n, const int *nrhs,
-                              float *A, const int *lda, int *ipiv, float *b,
-                              const int *ldb, int *info);
+// extern "C" void slate_dgetrs_(const char *trans, const int *n, const int
+// *nrhs,
+//                              double *A, const int *lda, int *ipiv, double *b,
+//                              const int *ldb, int *info);
+
+// extern "C" void slate_sgetrs_(const char *trans, const int *n, const int
+// *nrhs,
+//                              float *A, const int *lda, int *ipiv, float *b,
+//                              const int *ldb, int *info);
 #endif
 
 auto const ignore = [](auto ignored) { (void)ignored; };
@@ -964,6 +973,24 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
 }
 
 #ifdef ASGARD_USE_SLATE
+
+extern "C"
+{
+  void descinit_(int *desc, int *m, int *n, int *mb, int *nb, int *irsrc,
+                 int *icsrc, int *ictxt, int *lld, int *info);
+  int numroc_(int *, int *, int *, int *, int *);
+  void Cblacs_get(int, int, int *);
+  void Cblacs_gridinit(int *, const char *, int, int);
+  void Cblacs_gridinfo(int, int *, int *, int *, int *);
+  void Cblacs_gridexit(int);
+  void Cblacs_pinfo(int *, int *);
+  void Cblacs_exit(int);
+  void pdgeadd_(char *, int *, int *, double *, double *, int *, int *, int *,
+                double *, double *, int *, int *, int *);
+  void psgeadd_(char *, int *, int *, float *, float *, int *, int *, int *,
+                float *, float *, int *, int *, int *);
+}
+
 template<typename P>
 void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
                 int *info)
@@ -979,18 +1006,62 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   expect(*ldb >= 1);
   expect(*lda >= 1);
   expect(*n >= 0);
+
+  int myid, numproc;
+  Cblacs_pinfo(&myid, &numproc);
+  int i_negone{-1}, i_zero{0}, ictxt;
+  Cblacs_get(i_negone, i_zero, &ictxt);
+  int nprow = static_cast<int>(std::sqrt(numproc)), npcol = nprow;
+  int mb = std::min(256, *n), nb = mb;
+  Cblacs_gridinit(&ictxt, "R", nprow, npcol);
+  int myrow, mycol;
+  Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+
+  int mp = numroc_(n, &mb, &myrow, &i_zero, &nprow);
+  int nq = numroc_(n, &nb, &mycol, &i_zero, &npcol);
+
+  std::vector<P> A_distr(mp * nq);
+
+  auto lld = std::max(numroc_(n, n, &myrow, &i_zero, &nprow), 1);
+  int descA[9];
+  descinit_(descA, n, n, n, n, &i_zero, &i_zero, &ictxt, &lld, info);
+  auto lld_distr = std::max(mp, 1);
+  int descA_distr[9];
+  descinit_(descA_distr, n, n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
+            info);
+
+  char N = 'N';
+  int i_one{1};
   if constexpr (std::is_same<P, double>::value)
   {
-    slate_dgesv_(n, nrhs, A, lda, ipiv, b, ldb, info);
+    double zero = 0.0E+0, one = 1.0E+0;
+    pdgeadd_(&N, n, n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
+             &i_one, &i_one, descA_distr);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    slate_sgesv_(n, nrhs, A, lda, ipiv, b, ldb, info);
+    float zero = 0.0E+0f, one = 1.0E+0f;
+    psgeadd_(&N, n, n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
+             &i_one, &i_one, descA_distr);
   }
   else
   { // not instantiated; should never be reached
     std::cerr << "gesv not implemented for non-floating types" << '\n';
-    tools::expect(false);
+    expect(false);
+  }
+
+  if constexpr (std::is_same<P, double>::value)
+  {
+    pdgesv(n, nrhs, A_distr.data(), mp, nq, descA_distr, ipiv, b, ldb, info);
+  }
+  else if constexpr (std::is_same<P, float>::value)
+  {
+    psgesv(
+  }
+  else
+  { // not instantiated; should never be reached
+    std::cerr << "gesv not implemented for non-floating types" << '\n';
+    expect(false);
   }
 }
 
@@ -1012,11 +1083,11 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
   expect(*n >= 0);
   if constexpr (std::is_same<P, double>::value)
   {
-    slate_dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    // slate_dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    slate_sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    // slate_sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
   }
   else
   { // not instantiated; should never be reached
