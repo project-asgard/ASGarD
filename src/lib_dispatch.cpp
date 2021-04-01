@@ -1009,11 +1009,14 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 
   int myid, numproc;
   Cblacs_pinfo(&myid, &numproc);
-  int i_negone{-1}, i_zero{0}, ictxt;
+
+  int i_negone{-1}, i_zero{0}, i_one{1}, ictxt;
   Cblacs_get(i_negone, i_zero, &ictxt);
+
   int nprow = static_cast<int>(std::sqrt(numproc)), npcol = nprow;
   int mb = std::min(256, *n), nb = mb;
   Cblacs_gridinit(&ictxt, "R", nprow, npcol);
+
   int myrow, mycol;
   Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
 
@@ -1022,16 +1025,17 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 
   std::vector<P> A_distr(mp * nq);
 
-  auto lld = std::max(numroc_(n, n, &myrow, &i_zero, &nprow), 1);
+  auto lld = numroc_(n, n, &myrow, &i_zero, &nprow);
+  lld = std::max(lld, 1);
   int descA[9];
   descinit_(descA, n, n, n, n, &i_zero, &i_zero, &ictxt, &lld, info);
+
   auto lld_distr = std::max(mp, 1);
   int descA_distr[9];
   descinit_(descA_distr, n, n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
             info);
 
   char N = 'N';
-  int i_one{1};
   if constexpr (std::is_same<P, double>::value)
   {
     double zero = 0.0E+0, one = 1.0E+0;
@@ -1050,13 +1054,92 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     expect(false);
   }
 
+  int 
+
+  mp = numroc_(n, &mb, &myrow, &i_zero, &nprow);
+  nq = numroc_(&_1_one, &nb, &mycol, &i_zero, &npcol);
+
+  std::vector<P> B_distr(mp*nq);
+
+  Cblacs_gridinfo(ictxt, &nprow, &i_one, &myrow, &mycol);
+  lld = numroc_(n, n, &myrow, &i_zero, &nprow);
+  lld = std::max(lld, 1);
+  std::cout << "lld: " << lld << '\n';
+  int descB[9];
+  descinit_(descB, n, &i_one, n, &i_one, &i_zero, &i_zero, &ictxt, &lld, info);
+  lld_distr = std::max(mp, 1);
+  int descB_distr[9];
+  descinit_(descB_distr, n, &i_one, &nb, &i_one, &i_zero, &i_zero, &ictxt, &lld_distr,
+            info);
+
+
+  std::cout << "descA_distr:\n";
+  for (auto val: descA_distr)
+  {
+    std::cout << val << " ";
+  }
+  std::cout << '\n';
+  std::cout << "descB_distr:\n";
+  for (auto val: descB_distr)
+  {
+    std::cout << val << " ";
+  }
+  std::cout << '\n';
+
   if constexpr (std::is_same<P, double>::value)
   {
-    pdgesv(n, nrhs, A_distr.data(), mp, nq, descA_distr, ipiv, b, ldb, info);
+    double zero = 0.0E+0, one = 1.0E+0;
+    pdgeadd_(&N, &i_one, n, &one, b, &i_one, &i_one, descB, &zero, B_distr.data(),
+             &i_one, &i_one, descB_distr);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    psgesv(
+    float zero = 0.0E+0f, one = 1.0E+0f;
+    psgeadd_(&N, &i_one, n, &one, b, &i_one, &i_one, descB, &zero, B_distr.data(),
+             &i_one, &i_one, descB_distr);
+  }
+  else
+  { // not instantiated; should never be reached
+    std::cerr << "gesv not implemented for non-floating types" << '\n';
+    expect(false);
+  }
+
+  std::cout << "pdgesv:\n";
+  std::cout << "n " << *n << ", nrhs " << *nrhs  << ", mp " << mp << ", nq " << nq << '\n';
+  std::cout << "A_distr:\n";
+  for (auto val: A_distr)
+  {
+    std::cout << val << " ";
+  }
+  std::cout << '\n';
+  std::cout << "A:\n";
+  for (int i=0; i<9;++i)
+  {
+    std::cout << A[i] << " ";
+  }
+  std::cout << '\n';
+  std::cout << "descA_distr:\n";
+  for (auto val: descA_distr)
+  {
+    std::cout << val << " ";
+  }
+  std::cout << '\n';
+  std::cout << "descB_distr:\n";
+  for (auto val: descB_distr)
+  {
+    std::cout << val << " ";
+  }
+  std::cout << '\n';
+
+
+
+  if constexpr (std::is_same<P, double>::value)
+  {
+    pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nb, descB_distr, info);
+  }
+  else if constexpr (std::is_same<P, float>::value)
+  {
+    psgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nb, descB_distr, info);
   }
   else
   { // not instantiated; should never be reached

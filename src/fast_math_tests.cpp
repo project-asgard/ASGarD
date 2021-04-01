@@ -744,7 +744,7 @@ TEMPLATE_TEST_CASE("other vector routines", "[fast_math]", float, double, int)
   }
 }
 
-TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
+TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float)
 {
   fk::matrix<TestType> const A_gold{
       {3.383861628748717e+00, 1.113343240310116e-02, 2.920740795411032e+00},
