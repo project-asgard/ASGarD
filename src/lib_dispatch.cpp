@@ -6,6 +6,8 @@
 #include <iostream>
 #include <type_traits>
 
+#include "mpi.h"
+
 #ifdef ASGARD_USE_CUDA
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
@@ -27,15 +29,13 @@ extern "C" void pdgesv_(int *n, int *nrhs, double *a, int *ia, int *ja,
                         int *desca, int *ipiv, double *b, int *ib, int *jb,
                         int *descb, int *info);
 
-// extern "C" void slate_dgetrs_(const char *trans, const int *n, const int
-// *nrhs,
-//                              double *A, const int *lda, int *ipiv, double *b,
-//                              const int *ldb, int *info);
+extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs,
+                              double *A, const int *lda, int *ipiv, double *b,
+                              const int *ldb, int *info);
 
-// extern "C" void slate_sgetrs_(const char *trans, const int *n, const int
-// *nrhs,
-//                              float *A, const int *lda, int *ipiv, float *b,
-//                              const int *ldb, int *info);
+extern "C" void slate_sgetrs_(const char *trans, const int *n, const int *nrhs,
+                             float *A, const int *lda, int *ipiv, float *b,
+                             const int *ldb, int *info);
 #endif
 
 auto const ignore = [](auto ignored) { (void)ignored; };
@@ -992,6 +992,94 @@ extern "C"
 }
 
 template<typename P>
+std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int npcol, int *descA_distr)
+{
+  // Useful constants
+  int i_one{1}, i_negone{-1}, i_zero{0};
+  P zero{0.0E+0}, one{1.0E+0};
+  std::vector<P> A_distr;
+  int descA[9];
+  int info, ictxt;
+  char N = 'N';
+
+  // Input your parameters: m, n - matrix dimensions, mb, nb - blocking
+  // parameters, nprow, npcol - grid dimensions
+  /*
+  // number of rows M_ or columns N_ in a global matrix that has been
+  // block-cyclically distributed
+  int n = 1, m = 8;
+  // row block size MB_ or the column block size NB_
+  int nb = 1, mb = 2;
+  // number processes per row, per column?
+  int nprow = 4, npcol = 1;
+  */
+  // process id?, number of processes?
+  int myid, numproc;
+  // process row index myrow or the process column index mycol
+  int myrow, mycol;
+
+  // Part with invoking of ScaLAPACK routines. Initialize process grid,
+  // first
+  Cblacs_pinfo(&myid, &numproc);
+  Cblacs_get(i_negone, i_zero, &ictxt);
+  Cblacs_gridinit(&ictxt, "Row-major", nprow, npcol);
+  Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+
+  std::cout << "n: " << n << ", m: " << m << '\n';// ", A.size(): " <<
+  // A.size() << '\n'; std::cout << myid << ", myrow: " << myrow << ", mycol: "
+  // << mycol << '\n';
+
+  // Compute dimensions of local part of distributed matrix A_distr
+  int mp = numroc_(&m, &mb, &myrow, &i_zero, &nprow);
+  int nq = numroc_(&n, &nb, &mycol, &i_zero, &npcol);
+  A_distr.resize(mp * nq);
+
+  //std::cout << myid << ", nq: " << nq << ", mp: " << mp << ", A_distr.size(): " << A_distr.size() << '\n';
+
+  // Initialize discriptors (local matrix A is considered as distributed with
+  // blocking parameters m, n,i.e. there is only one block - whole matrix A -
+  // which is located on process (0,0) )
+  int lld = numroc_(&m, &n, &myrow, &i_zero, &i_one);
+  std::cout << "lld: " << lld << '\n';
+  //lld = std::max(1, lld);
+  descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
+  // std::cout << "info? " << info << '\n';
+  int lld_distr = numroc_(&m, &n, &myrow, &i_zero, &nprow);
+  //std::cout << "lld_distr: " << lld_distr << '\n';
+  //lld_distr = std::max(mp, 1);
+  std::cout << "m " << m << ' ' << n << ' ' << mb << ' ' << nb << '\n';
+  std::cout << "i_zero " << i_zero << ", ictxt " << ictxt  << ", lld " << lld_distr << ", info " << info << '\n';
+  descinit_(descA_distr, &m, &n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
+            &info);
+
+  // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
+  if constexpr (std::is_same<P, double>::value)
+  {
+    pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
+             &i_one, &i_one, descA_distr);
+  }
+  else
+  {
+    psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
+             &i_one, &i_one, descA_distr);
+  }
+
+  /*if (myid == 0)
+  {
+    for (auto elem : A_distr)
+      std::cout << elem << " ";
+    std::cout << '\n';
+    for (int i=0; i< 9; ++i)
+      std::cout << descA_distr[i] << " ";
+    std::cout << '\n';
+  }*/
+
+  // End of ScaLAPACK part. Exit process grid.
+  Cblacs_gridexit(ictxt);
+  return A_distr;
+}
+
+template<typename P>
 void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
                 int *info)
 {
@@ -1015,111 +1103,51 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 
   int nprow = static_cast<int>(std::sqrt(numproc)), npcol = nprow;
   int mb = std::min(256, *n), nb = mb;
-  Cblacs_gridinit(&ictxt, "R", nprow, npcol);
+  MPI_Comm globalCommunicator(MPI_COMM_WORLD);
+  int globalContext(Csys2blacs_handle(globalCommunicator));
+  
 
+  Cblacs_gridinit(&ictxt, "R", nprow, npcol);
+  int ret{ictxt};
   int myrow, mycol;
   Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-
+  
   int mp = numroc_(n, &mb, &myrow, &i_zero, &nprow);
   int nq = numroc_(n, &nb, &mycol, &i_zero, &npcol);
 
-  std::vector<P> A_distr(mp * nq);
-
-  auto lld = numroc_(n, n, &myrow, &i_zero, &nprow);
-  lld = std::max(lld, 1);
-  int descA[9];
-  descinit_(descA, n, n, n, n, &i_zero, &i_zero, &ictxt, &lld, info);
-
-  auto lld_distr = std::max(mp, 1);
-  int descA_distr[9];
-  descinit_(descA_distr, n, n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
-            info);
-
-  char N = 'N';
-  if constexpr (std::is_same<P, double>::value)
-  {
-    double zero = 0.0E+0, one = 1.0E+0;
-    pdgeadd_(&N, n, n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
-             &i_one, &i_one, descA_distr);
-  }
-  else if constexpr (std::is_same<P, float>::value)
-  {
-    float zero = 0.0E+0f, one = 1.0E+0f;
-    psgeadd_(&N, n, n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
-             &i_one, &i_one, descA_distr);
-  }
-  else
-  { // not instantiated; should never be reached
-    std::cerr << "gesv not implemented for non-floating types" << '\n';
-    expect(false);
-  }
-
-  int 
-
-  mp = numroc_(n, &mb, &myrow, &i_zero, &nprow);
-  nq = numroc_(&_1_one, &nb, &mycol, &i_zero, &npcol);
-
-  std::vector<P> B_distr(mp*nq);
-
-  Cblacs_gridinfo(ictxt, &nprow, &i_one, &myrow, &mycol);
-  lld = numroc_(n, n, &myrow, &i_zero, &nprow);
-  lld = std::max(lld, 1);
-  std::cout << "lld: " << lld << '\n';
-  int descB[9];
-  descinit_(descB, n, &i_one, n, &i_one, &i_zero, &i_zero, &ictxt, &lld, info);
-  lld_distr = std::max(mp, 1);
-  int descB_distr[9];
-  descinit_(descB_distr, n, &i_one, &nb, &i_one, &i_zero, &i_zero, &ictxt, &lld_distr,
-            info);
-
-
-  std::cout << "descA_distr:\n";
-  for (auto val: descA_distr)
-  {
-    std::cout << val << " ";
-  }
-  std::cout << '\n';
-  std::cout << "descB_distr:\n";
-  for (auto val: descB_distr)
-  {
-    std::cout << val << " ";
-  }
-  std::cout << '\n';
-
-  if constexpr (std::is_same<P, double>::value)
-  {
-    double zero = 0.0E+0, one = 1.0E+0;
-    pdgeadd_(&N, &i_one, n, &one, b, &i_one, &i_one, descB, &zero, B_distr.data(),
-             &i_one, &i_one, descB_distr);
-  }
-  else if constexpr (std::is_same<P, float>::value)
-  {
-    float zero = 0.0E+0f, one = 1.0E+0f;
-    psgeadd_(&N, &i_one, n, &one, b, &i_one, &i_one, descB, &zero, B_distr.data(),
-             &i_one, &i_one, descB_distr);
-  }
-  else
-  { // not instantiated; should never be reached
-    std::cerr << "gesv not implemented for non-floating types" << '\n';
-    expect(false);
-  }
-
   std::cout << "pdgesv:\n";
+  std::cout << "ictxt: " << ictxt << ' ' << nprow << ' ' << npcol << ' ' << ret << '\n';
   std::cout << "n " << *n << ", nrhs " << *nrhs  << ", mp " << mp << ", nq " << nq << '\n';
-  std::cout << "A_distr:\n";
+  std::cout << "A\n";
+  for (int i=0;i < 9;++i)
+  {
+    std::cout << A[i] << " ";
+  }
+  std::cout << '\n';
+  std::cout << "B:\n";
+  for (int i=0; i<3;++i)
+  {
+    std::cout << b[i] << " ";
+  }
+  std::cout << '\n';
+  int descA_distr[9];
+  auto A_distr = scatter_matrix(A, *n, *n, nb, mb, npcol, nprow, descA_distr);
+  std::cout << "A_distr:" << A_distr.size() << '\n';
   for (auto val: A_distr)
   {
     std::cout << val << " ";
   }
   std::cout << '\n';
-  std::cout << "A:\n";
-  for (int i=0; i<9;++i)
-  {
-    std::cout << A[i] << " ";
-  }
-  std::cout << '\n';
   std::cout << "descA_distr:\n";
   for (auto val: descA_distr)
+   {
+    std::cout << val << " ";
+  }
+  std::cout << '\n';
+  int descB_distr[9];
+  auto B_distr = scatter_matrix(b, 1, *n, 1, mb, 1, nprow, descB_distr);
+  std::cout << "B_distr:\n";
+  for (auto val: B_distr)
   {
     std::cout << val << " ";
   }
@@ -1130,22 +1158,20 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     std::cout << val << " ";
   }
   std::cout << '\n';
-
-
-
   if constexpr (std::is_same<P, double>::value)
   {
-    pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nb, descB_distr, info);
+    //pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    psgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nb, descB_distr, info);
+    //psgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else
   { // not instantiated; should never be reached
     std::cerr << "gesv not implemented for non-floating types" << '\n';
     expect(false);
   }
+  Cblacs_exit(i_zero);
 }
 
 template<typename P>
@@ -1166,11 +1192,11 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
   expect(*n >= 0);
   if constexpr (std::is_same<P, double>::value)
   {
-    // slate_dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    // slate_sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
   }
   else
   { // not instantiated; should never be reached
