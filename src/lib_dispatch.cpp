@@ -1099,7 +1099,7 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     expect(false);
   }
   Cblacs_gridexit(ictxt);
-  Cblacs_exit(i_zero);
+  //Cblacs_exit(i_zero);
 
   for (int i = 0; i < std::pow(*n,2); ++i)
   {

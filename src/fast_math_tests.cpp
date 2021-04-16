@@ -5,8 +5,17 @@
 #include <cmath>
 #include <numeric>
 
+struct distribution_test_init
+{
+  distribution_test_init() { initialize_distribution(); }
+  ~distribution_test_init() { finalize_distribution(); }
+};
 
-TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", double)
+#ifdef ASGARD_USE_MPI
+static distribution_test_init const distrib_test_info;
+#endif
+
+TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", double, float)
 {
   fk::matrix<TestType> const A_gold{
       {3.383861628748717e+00, 1.113343240310116e-02, 2.920740795411032e+00},
@@ -40,16 +49,6 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", double)
   fk::matrix<TestType> const LU_gold = L_gold + U_gold - I_gold;
 
 #ifdef ASGARD_USE_SLATE
-
-//struct distribution_test_init
-//{
-//  distribution_test_init() { initialize_distribution(); }  
-//  ~distribution_test_init() { finalize_distribution(); }
-//};
-
-#ifdef ASGARD_USE_MPI
-//static distribution_test_init const distrib_test_info;
-#endif
 
   SECTION("slate_gesv and slate_getrs")
   {
