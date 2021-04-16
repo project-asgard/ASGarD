@@ -3,7 +3,10 @@
 #include "elements.hpp"
 
 #ifdef ASGARD_USE_MPI
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
 #include "mpi.h"
+#pragma GCC diagnostic pop
 #endif
 
 #include <list>
