@@ -991,15 +991,53 @@ extern "C"
                 float *, float *, int *, int *, int *);
 }
 
+
+
 template<typename P>
-std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int npcol, int *descA_distr)
+void gather_matrix(P *A, int *descA, P* A_distr, int *descA_distr, int n, int m, int nprow, int npcol)
+{
+  // Useful constants
+  int i_one{1}, i_negone{-1}, i_zero{0};
+  P zero{0.0E+0}, one{1.0E+0};
+  int ictxt;
+  char N = 'N';
+
+  // process id?, number of processes?
+  int myid, numproc;
+  // process row index myrow or the process column index mycol
+  int myrow, mycol;
+
+  // Part with invoking of ScaLAPACK routines. Initialize process grid,
+  // first
+  Cblacs_pinfo(&myid, &numproc);
+  Cblacs_get(i_negone, i_zero, &ictxt);
+  Cblacs_gridinit(&ictxt, "Row-major", nprow, npcol);
+  Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+
+  // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
+  if constexpr (std::is_same<P, double>::value)
+  {
+    pdgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
+             &i_one, &i_one, descA);
+  }
+  else
+  {
+    psgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
+             &i_one, &i_one, descA);
+  }
+  // End of ScaLAPACK part. Exit process grid.
+  Cblacs_gridexit(ictxt);
+}
+
+
+template<typename P>
+std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int npcol, int *descA, int *descA_distr)
 {
   // Useful constants
   int i_one{1}, i_negone{-1}, i_zero{0};
   P zero{0.0E+0}, one{1.0E+0};
   std::vector<P> A_distr;
-  int descA[9];
-  int info, ictxt{0};
+  int info, ictxt;
   char N = 'N';
 
   // process id?, number of processes?
@@ -1023,10 +1061,10 @@ std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int
   // blocking parameters m, n,i.e. there is only one block - whole matrix A -
   // which is located on process (0,0) )
   int lld = numroc_(&m, &n, &myrow, &i_zero, &i_one);
-  //lld = std::max(1, lld);
+  lld = std::max(1, lld);
   descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
   int lld_distr = numroc_(&m, &n, &myrow, &i_zero, &nprow);
-  //lld_distr = std::max(mp, 1);
+  lld_distr = std::max(1, mp);
   descinit_(descA_distr, &m, &n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
             &info);
 
@@ -1075,11 +1113,11 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   int mp = 1;// numroc_(n, &mb, &myrow, &i_zero, &nprow);
   int nq = 1;//numroc_(n, &nb, &mycol, &i_zero, &npcol);
 
-  int descA_distr[9];
-  auto A_distr = scatter_matrix(A, *n, *n, nb, mb, npcol, nprow, descA_distr);
+  int descA[9], descA_distr[9];
+  auto A_distr = scatter_matrix(A, *n, *n, nb, mb, nprow, npcol, descA, descA_distr);
 
-  int descB_distr[9];
-  auto B_distr = scatter_matrix(b, 1, *n, 1, nb, 1, nprow, descB_distr);
+  int descB[9], descB_distr[9];
+  auto B_distr = scatter_matrix(b, 1, *n, 1, nb, 1, npcol, descB, descB_distr);
   Cblacs_pinfo(&myid, &numproc);
   Cblacs_get(i_negone, i_zero, &ictxt);
   Cblacs_gridinit(&ictxt, "R", nprow, npcol);
@@ -1099,18 +1137,9 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     expect(false);
   }
   Cblacs_gridexit(ictxt);
-  //Cblacs_exit(i_zero);
 
-  for (int i = 0; i < std::pow(*n,2); ++i)
-  {
-    A[i] = A_distr[i];
-  }
-
-  for (int i = 0; i< *n; ++i)
-  {
-    b[i] = B_distr[i];
-
-  }
+  gather_matrix(A, descA, A_distr.data(), descA_distr, *n, *n, nprow, npcol);
+  gather_matrix(b, descB, B_distr.data(), descB_distr, 1, *n, 1, npcol);
 }
 
 template<typename P>
