@@ -999,7 +999,7 @@ std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int
   P zero{0.0E+0}, one{1.0E+0};
   std::vector<P> A_distr;
   int descA[9];
-  int info, ictxt;
+  int info, ictxt{0};
   char N = 'N';
 
   // Input your parameters: m, n - matrix dimensions, mb, nb - blocking
@@ -1024,6 +1024,7 @@ std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int
   Cblacs_get(i_negone, i_zero, &ictxt);
   Cblacs_gridinit(&ictxt, "Row-major", nprow, npcol);
   Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+  std::cout<< "ictxt: " << ictxt << '\n';
 
   std::cout << "n: " << n << ", m: " << m << '\n';// ", A.size(): " <<
   // A.size() << '\n'; std::cout << myid << ", myrow: " << myrow << ", mycol: "
@@ -1095,30 +1096,30 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   expect(*lda >= 1);
   expect(*n >= 0);
 
-  int myid, numproc;
-  Cblacs_pinfo(&myid, &numproc);
+  int myid, numproc{1};
+  //Cblacs_pinfo(&myid, &numproc);
 
   int i_negone{-1}, i_zero{0}, i_one{1}, ictxt;
-  Cblacs_get(i_negone, i_zero, &ictxt);
+  //Cblacs_get(i_negone, i_zero, &ictxt);
+  //std::cout << "ictxt: " << ictxt << '\n';
 
   int nprow = static_cast<int>(std::sqrt(numproc)), npcol = nprow;
-  int mb = std::min(256, *n), nb = mb;
-  MPI_Comm globalCommunicator(MPI_COMM_WORLD);
-  int globalContext(Csys2blacs_handle(globalCommunicator));
-  
+  int mb = 64, nb = 64;
 
-  Cblacs_gridinit(&ictxt, "R", nprow, npcol);
-  int ret{ictxt};
-  int myrow, mycol;
-  Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-  
-  int mp = numroc_(n, &mb, &myrow, &i_zero, &nprow);
-  int nq = numroc_(n, &nb, &mycol, &i_zero, &npcol);
+  //Cblacs_gridinit(&ictxt, "R", nprow, npcol);
+  //std::cout << "ictxt: " << ictxt << '\n';
+  int myrow{0}, mycol{0};
+  //Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+  //std::cout << "myrow: " << myrow << " mycol:" << mycol << '\n';
 
-  std::cout << "pdgesv:\n";
-  std::cout << "ictxt: " << ictxt << ' ' << nprow << ' ' << npcol << ' ' << ret << '\n';
-  std::cout << "n " << *n << ", nrhs " << *nrhs  << ", mp " << mp << ", nq " << nq << '\n';
-  std::cout << "A\n";
+  int mp = 1;// numroc_(n, &mb, &myrow, &i_zero, &nprow);
+  int nq = 1;//numroc_(n, &nb, &mycol, &i_zero, &npcol);
+
+
+  //std::cout << "pdgesv:\n";
+  std::cout << "nprow: " <<  nprow << ", npcol: " << npcol << '\n';
+  //std::cout << "n " << *n << ", nrhs " << *nrhs  << ", mp " << mp << ", nq " << nq << '\n';
+  //std::cout << "A\n";
   for (int i=0;i < 9;++i)
   {
     std::cout << A[i] << " ";
@@ -1132,6 +1133,7 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   std::cout << '\n';
   int descA_distr[9];
   auto A_distr = scatter_matrix(A, *n, *n, nb, mb, npcol, nprow, descA_distr);
+
   std::cout << "A_distr:" << A_distr.size() << '\n';
   for (auto val: A_distr)
   {
@@ -1145,7 +1147,7 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   }
   std::cout << '\n';
   int descB_distr[9];
-  auto B_distr = scatter_matrix(b, 1, *n, 1, mb, 1, nprow, descB_distr);
+  auto B_distr = scatter_matrix(b, 1, *n, 1, nb, 1, nprow, descB_distr);
   std::cout << "B_distr:\n";
   for (auto val: B_distr)
   {
@@ -1158,20 +1160,45 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     std::cout << val << " ";
   }
   std::cout << '\n';
+
+  Cblacs_pinfo(&myid, &numproc);
+  Cblacs_get(i_negone, i_zero, &ictxt);
+  //std::cout << "ictxt: " << ictxt << '\n';
+
+  Cblacs_gridinit(&ictxt, "R", nprow, npcol);
+  //std::cout << "ictxt: " << ictxt << '\n';
+  Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+
+  std::cout << "pdgesv:\n";
+  std::cout << "ictxt: " << ictxt << ' ' << nprow << ' ' << npcol << '\n';
+  std::cout << "n " << *n << ", nrhs " << *nrhs  << ", mp " << mp << ", nq " << nq << '\n';
+
   if constexpr (std::is_same<P, double>::value)
   {
-    //pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
+    pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    //psgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
+    psgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else
   { // not instantiated; should never be reached
     std::cerr << "gesv not implemented for non-floating types" << '\n';
     expect(false);
   }
+  Cblacs_gridexit(ictxt);
   Cblacs_exit(i_zero);
+
+  for (int i = 0; i < std::pow(*n,2); ++i)
+  {
+    A[i] = A_distr[i];
+  }
+
+  for (int i = 0; i< *n; ++i)
+  {
+    b[i] = B_distr[i];
+
+  }
 }
 
 template<typename P>
