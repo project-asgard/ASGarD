@@ -1002,17 +1002,6 @@ std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int
   int info, ictxt{0};
   char N = 'N';
 
-  // Input your parameters: m, n - matrix dimensions, mb, nb - blocking
-  // parameters, nprow, npcol - grid dimensions
-  /*
-  // number of rows M_ or columns N_ in a global matrix that has been
-  // block-cyclically distributed
-  int n = 1, m = 8;
-  // row block size MB_ or the column block size NB_
-  int nb = 1, mb = 2;
-  // number processes per row, per column?
-  int nprow = 4, npcol = 1;
-  */
   // process id?, number of processes?
   int myid, numproc;
   // process row index myrow or the process column index mycol
@@ -1024,32 +1013,20 @@ std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int
   Cblacs_get(i_negone, i_zero, &ictxt);
   Cblacs_gridinit(&ictxt, "Row-major", nprow, npcol);
   Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-  std::cout<< "ictxt: " << ictxt << '\n';
-
-  std::cout << "n: " << n << ", m: " << m << '\n';// ", A.size(): " <<
-  // A.size() << '\n'; std::cout << myid << ", myrow: " << myrow << ", mycol: "
-  // << mycol << '\n';
 
   // Compute dimensions of local part of distributed matrix A_distr
   int mp = numroc_(&m, &mb, &myrow, &i_zero, &nprow);
   int nq = numroc_(&n, &nb, &mycol, &i_zero, &npcol);
   A_distr.resize(mp * nq);
 
-  //std::cout << myid << ", nq: " << nq << ", mp: " << mp << ", A_distr.size(): " << A_distr.size() << '\n';
-
   // Initialize discriptors (local matrix A is considered as distributed with
   // blocking parameters m, n,i.e. there is only one block - whole matrix A -
   // which is located on process (0,0) )
   int lld = numroc_(&m, &n, &myrow, &i_zero, &i_one);
-  std::cout << "lld: " << lld << '\n';
   //lld = std::max(1, lld);
   descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
-  // std::cout << "info? " << info << '\n';
   int lld_distr = numroc_(&m, &n, &myrow, &i_zero, &nprow);
-  //std::cout << "lld_distr: " << lld_distr << '\n';
   //lld_distr = std::max(mp, 1);
-  std::cout << "m " << m << ' ' << n << ' ' << mb << ' ' << nb << '\n';
-  std::cout << "i_zero " << i_zero << ", ictxt " << ictxt  << ", lld " << lld_distr << ", info " << info << '\n';
   descinit_(descA_distr, &m, &n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
             &info);
 
@@ -1064,16 +1041,6 @@ std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int nprow, int
     psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
              &i_one, &i_one, descA_distr);
   }
-
-  /*if (myid == 0)
-  {
-    for (auto elem : A_distr)
-      std::cout << elem << " ";
-    std::cout << '\n';
-    for (int i=0; i< 9; ++i)
-      std::cout << descA_distr[i] << " ";
-    std::cout << '\n';
-  }*/
 
   // End of ScaLAPACK part. Exit process grid.
   Cblacs_gridexit(ictxt);
@@ -1097,81 +1064,26 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   expect(*n >= 0);
 
   int myid, numproc{1};
-  //Cblacs_pinfo(&myid, &numproc);
 
   int i_negone{-1}, i_zero{0}, i_one{1}, ictxt;
-  //Cblacs_get(i_negone, i_zero, &ictxt);
-  //std::cout << "ictxt: " << ictxt << '\n';
 
   int nprow = static_cast<int>(std::sqrt(numproc)), npcol = nprow;
   int mb = 64, nb = 64;
 
-  //Cblacs_gridinit(&ictxt, "R", nprow, npcol);
-  //std::cout << "ictxt: " << ictxt << '\n';
   int myrow{0}, mycol{0};
-  //Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-  //std::cout << "myrow: " << myrow << " mycol:" << mycol << '\n';
 
   int mp = 1;// numroc_(n, &mb, &myrow, &i_zero, &nprow);
   int nq = 1;//numroc_(n, &nb, &mycol, &i_zero, &npcol);
 
-
-  //std::cout << "pdgesv:\n";
-  std::cout << "nprow: " <<  nprow << ", npcol: " << npcol << '\n';
-  //std::cout << "n " << *n << ", nrhs " << *nrhs  << ", mp " << mp << ", nq " << nq << '\n';
-  //std::cout << "A\n";
-  for (int i=0;i < 9;++i)
-  {
-    std::cout << A[i] << " ";
-  }
-  std::cout << '\n';
-  std::cout << "B:\n";
-  for (int i=0; i<3;++i)
-  {
-    std::cout << b[i] << " ";
-  }
-  std::cout << '\n';
   int descA_distr[9];
   auto A_distr = scatter_matrix(A, *n, *n, nb, mb, npcol, nprow, descA_distr);
 
-  std::cout << "A_distr:" << A_distr.size() << '\n';
-  for (auto val: A_distr)
-  {
-    std::cout << val << " ";
-  }
-  std::cout << '\n';
-  std::cout << "descA_distr:\n";
-  for (auto val: descA_distr)
-   {
-    std::cout << val << " ";
-  }
-  std::cout << '\n';
   int descB_distr[9];
   auto B_distr = scatter_matrix(b, 1, *n, 1, nb, 1, nprow, descB_distr);
-  std::cout << "B_distr:\n";
-  for (auto val: B_distr)
-  {
-    std::cout << val << " ";
-  }
-  std::cout << '\n';
-  std::cout << "descB_distr:\n";
-  for (auto val: descB_distr)
-  {
-    std::cout << val << " ";
-  }
-  std::cout << '\n';
-
   Cblacs_pinfo(&myid, &numproc);
   Cblacs_get(i_negone, i_zero, &ictxt);
-  //std::cout << "ictxt: " << ictxt << '\n';
-
   Cblacs_gridinit(&ictxt, "R", nprow, npcol);
-  //std::cout << "ictxt: " << ictxt << '\n';
   Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-
-  std::cout << "pdgesv:\n";
-  std::cout << "ictxt: " << ictxt << ' ' << nprow << ' ' << npcol << '\n';
-  std::cout << "n " << *n << ", nrhs " << *nrhs  << ", mp " << mp << ", nq " << nq << '\n';
 
   if constexpr (std::is_same<P, double>::value)
   {
