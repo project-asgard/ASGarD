@@ -60,12 +60,14 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", double, float)
 
     TestType const tol_factor =
         std::is_same<TestType, double>::value ? 1e-16 : 1e-7;
-
-    rmse_comparison(A_copy, LU_gold, tol_factor);
-    rmse_comparison(x, X_gold, tol_factor);
-    x = B1_gold;
-    fm::getrs(A_copy, x, ipiv, solve_opts::slate);
-    rmse_comparison(x, X1_gold, tol_factor);
+    int rank = get_rank();
+    if(rank == 0) {
+        rmse_comparison(A_copy, LU_gold, tol_factor);
+        rmse_comparison(x, X_gold, tol_factor);
+        x = B1_gold;
+        fm::getrs(A_copy, x, ipiv, solve_opts::slate);
+        rmse_comparison(x, X1_gold, tol_factor);
+    }
   }
 #endif
 }
