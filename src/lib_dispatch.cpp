@@ -994,23 +994,25 @@ extern "C"
 template <typename P>
 class parallel_solver  {
 private:
-  int myid, numproc, ictxt;
-  int nprow{1}, npcol, myrow, mycol;
-  int mb{256}, nb{256};
+  int ictxt_, nprow_{1}, npcol_, myrow_, mycol_;
+  int mb_, nb_;
 public:
-  parallel_solver(){
+  parallel_solver(int mb = 256, int nb = 256){
     int i_negone{-1}, i_zero{0};
+    mb_ = mb;
+    nb_ = nb;
+    int myid, numproc;
     Cblacs_pinfo(&myid, &numproc);
-    npcol = std::sqrt(numproc) + 1;
-    for(; npcol >= 1; npcol--) {
-      nprow = numproc/npcol;
-      bool is_found = ((nprow * npcol) == numproc);
+    npcol_ = std::sqrt(numproc) + 1;
+    for(; npcol_ >= 1; npcol_--) {
+      nprow_ = numproc/npcol_;
+      bool is_found = ((nprow_ * npcol_) == numproc);
       if (is_found) break;
     };
-    assert( (nprow >= 1) && (npcol >= 1) && (nprow*npcol == numproc) );
-    Cblacs_get(i_negone, i_zero, &ictxt);
-    Cblacs_gridinit(&ictxt, "R", nprow, npcol);
-    Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+    assert( (nprow_ >= 1) && (npcol_ >= 1) && (nprow_*npcol_ == numproc) );
+    Cblacs_get(i_negone, i_zero, &ictxt_);
+    Cblacs_gridinit(&ictxt_, "R", nprow_, npcol_);
+    Cblacs_gridinfo(ictxt_, &nprow_, &npcol_, &myrow_, &mycol_);
   }
 
   void gather_matrix(P *A, int *descA, P* A_distr, int *descA_distr, int n, int m)
@@ -1025,10 +1027,15 @@ public:
       pdgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
                &i_one, &i_one, descA);
     }
-    else
+    else if constexpr (std::is_same<P, float>::value)
     {
       psgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
                &i_one, &i_one, descA);
+    }
+    else
+    { // not instantiated; should never be reached
+      std::cerr << "geadd not implemented for non-floating types" << '\n';
+      expect(false);
     }
   }
 
@@ -1042,19 +1049,19 @@ public:
     int info;
 
     // Compute dimensions of local part of distributed matrix A_distr
-    int mp = numroc_(&m, &mb, &myrow, &i_zero, &nprow);
-    int nq = numroc_(&n, &nb, &mycol, &i_zero, &npcol);
+    int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
+    int nq = numroc_(&n, &nb_, &mycol_, &i_zero, &npcol_);
 
     A_distr.resize(mp * nq);
     // Initialize discriptors (local matrix A is considered as distributed with
     // blocking parameters m, n,i.e. there is only one block - whole matrix A -
     // which is located on process (0,0) )
-    int lld = numroc_(&m, &n, &myrow, &i_zero, &i_one);
+    int lld = numroc_(&m, &n, &myrow_, &i_zero, &i_one);
     lld = std::max(1, lld);
-    descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
-    int lld_distr = numroc_(&m, &n, &myrow, &i_zero, &nprow);
+    descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt_, &lld, &info);
+    int lld_distr = numroc_(&m, &n, &myrow_, &i_zero, &nprow_);
     lld_distr = std::max(1, mp);
-    descinit_(descA_distr, &m, &n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
+    descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_, &lld_distr,
               &info);
 
     // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
@@ -1063,19 +1070,23 @@ public:
       pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
                &i_one, &i_one, descA_distr);
     }
-    else
+    else if constexpr (std::is_same<P, float>::value)
     {
       psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
                &i_one, &i_one, descA_distr);
     }
-
+    else
+    { // not instantiated; should never be reached
+      std::cerr << "geadd not implemented for non-floating types" << '\n';
+      expect(false);
+    }
     // End of ScaLAPACK part. Exit process grid.
     return A_distr;
   }
 
   ~parallel_solver()
   {
-    Cblacs_gridexit(ictxt);
+    Cblacs_gridexit(ictxt_);
   }
 };
 
@@ -1095,8 +1106,6 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   expect(*lda >= 1);
   expect(*n >= 0);
 
-  int i_one{1};
-
   parallel_solver<P> psolver;
 
   int descA[9], descA_distr[9];
@@ -1105,9 +1114,7 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   int descB[9], descB_distr[9];
   auto B_distr = psolver.scatter_matrix(b, 1, *n, descB, descB_distr);
 
-  int mp = 1;
-  int nq = 1;
-
+  int mp{1}, nq{1}, i_one{1};
   if constexpr (std::is_same<P, double>::value)
   {
     pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
