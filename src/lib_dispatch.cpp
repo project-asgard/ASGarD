@@ -991,73 +991,93 @@ extern "C"
                 float *, float *, int *, int *, int *);
 }
 
-
-int myid, numproc;
-int ictxt;
-int nprow, npcol, myrow, mycol;
-
-template<typename P>
-void gather_matrix(P *A, int *descA, P* A_distr, int *descA_distr, int n, int m)
-{
-  // Useful constants
-  int i_one{1};
-  P zero{0.0E+0}, one{1.0E+0};
-  char N = 'N';
-
-  // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
-  if constexpr (std::is_same<P, double>::value)
-  {
-    pdgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
-             &i_one, &i_one, descA);
-  }
-  else
-  {
-    psgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
-             &i_one, &i_one, descA);
-  }
-}
-
-template<typename P>
-std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int *descA, int *descA_distr)
-{
-  // Useful constants
-  int i_one{1}, i_zero{0};
-  P zero{0.0E+0}, one{1.0E+0};
-  std::vector<P> A_distr;
-  int info;
-  char N = 'N';
-
-  // Compute dimensions of local part of distributed matrix A_distr
-  int mp = numroc_(&m, &mb, &myrow, &i_zero, &nprow);
-  int nq = numroc_(&n, &nb, &mycol, &i_zero, &npcol);
-
-  A_distr.resize(mp * nq);
-  // Initialize discriptors (local matrix A is considered as distributed with
-  // blocking parameters m, n,i.e. there is only one block - whole matrix A -
-  // which is located on process (0,0) )
-  int lld = numroc_(&m, &n, &myrow, &i_zero, &i_one);
-  lld = std::max(1, lld);
-  descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
-  int lld_distr = numroc_(&m, &n, &myrow, &i_zero, &nprow);
-  lld_distr = std::max(1, mp);
-  descinit_(descA_distr, &m, &n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
-            &info);
-
-  // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
-  if constexpr (std::is_same<P, double>::value)
-  {
-    pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
-             &i_one, &i_one, descA_distr);
-  }
-  else
-  {
-    psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
-             &i_one, &i_one, descA_distr);
+template <typename P>
+class parallel_solver  {
+private:
+  int myid, numproc, ictxt;
+  int nprow{1}, npcol, myrow, mycol;
+  int mb{256}, nb{256};
+public:
+  parallel_solver(){
+    int i_negone{-1}, i_zero{0};
+    Cblacs_pinfo(&myid, &numproc);
+    npcol = std::sqrt(numproc) + 1;
+    for(; npcol >= 1; npcol--) {
+      nprow = numproc/npcol;
+      bool is_found = ((nprow * npcol) == numproc);
+      if (is_found) break;
+    };
+    assert( (nprow >= 1) && (npcol >= 1) && (nprow*npcol == numproc) );
+    Cblacs_get(i_negone, i_zero, &ictxt);
+    Cblacs_gridinit(&ictxt, "R", nprow, npcol);
+    Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
   }
 
-  // End of ScaLAPACK part. Exit process grid.
-  return A_distr;
-}
+  void gather_matrix(P *A, int *descA, P* A_distr, int *descA_distr, int n, int m)
+  {
+    // Useful constants
+    P zero{0.0E+0}, one{1.0E+0};
+    int i_one{1};
+    char N{'N'};
+    // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
+    if constexpr (std::is_same<P, double>::value)
+    {
+      pdgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
+               &i_one, &i_one, descA);
+    }
+    else
+    {
+      psgeadd_(&N, &m, &n, &one, A_distr, &i_one, &i_one, descA_distr, &zero, A,
+               &i_one, &i_one, descA);
+    }
+  }
+
+  std::vector<P> scatter_matrix(P *A, int n, int m, int *descA, int *descA_distr)
+  {
+    // Useful constants
+    P zero{0.0E+0}, one{1.0E+0};
+    int i_one{1}, i_zero{0};
+    char N{'N'};
+    std::vector<P> A_distr;
+    int info;
+
+    // Compute dimensions of local part of distributed matrix A_distr
+    int mp = numroc_(&m, &mb, &myrow, &i_zero, &nprow);
+    int nq = numroc_(&n, &nb, &mycol, &i_zero, &npcol);
+
+    A_distr.resize(mp * nq);
+    // Initialize discriptors (local matrix A is considered as distributed with
+    // blocking parameters m, n,i.e. there is only one block - whole matrix A -
+    // which is located on process (0,0) )
+    int lld = numroc_(&m, &n, &myrow, &i_zero, &i_one);
+    lld = std::max(1, lld);
+    descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
+    int lld_distr = numroc_(&m, &n, &myrow, &i_zero, &nprow);
+    lld_distr = std::max(1, mp);
+    descinit_(descA_distr, &m, &n, &mb, &nb, &i_zero, &i_zero, &ictxt, &lld_distr,
+              &info);
+
+    // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
+    if constexpr (std::is_same<P, double>::value)
+    {
+      pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
+               &i_one, &i_one, descA_distr);
+    }
+    else
+    {
+      psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
+               &i_one, &i_one, descA_distr);
+    }
+
+    // End of ScaLAPACK part. Exit process grid.
+    return A_distr;
+  }
+
+  ~parallel_solver()
+  {
+    Cblacs_gridexit(ictxt);
+  }
+};
 
 template<typename P>
 void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
@@ -1075,26 +1095,15 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   expect(*lda >= 1);
   expect(*n >= 0);
 
-  int i_negone{-1}, i_zero{0}, i_one{1}, ictxt;
-  Cblacs_pinfo(&myid, &numproc);
-  nprow = 1;
-  npcol = std::sqrt(numproc) + 1;
-  for(; npcol >= 1; npcol--) {
-    nprow = numproc/npcol;
-    bool is_found = ((nprow * npcol) == numproc);
-    if (is_found) break;
-  };
-  assert( (nprow >= 1) && (npcol >= 1) && (nprow*npcol == numproc) );
-  int mb = 256, nb = 256;
-  Cblacs_get(i_negone, i_zero, &ictxt);
-  Cblacs_gridinit(&ictxt, "R", nprow, npcol);
-  Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
+  int i_one{1};
+
+  parallel_solver<P> psolver;
 
   int descA[9], descA_distr[9];
-  auto A_distr = scatter_matrix(A, *n, *n, nb, mb, descA, descA_distr);
+  auto A_distr = psolver.scatter_matrix(A, *n, *n, descA, descA_distr);
 
   int descB[9], descB_distr[9];
-  auto B_distr = scatter_matrix(b, 1, *n, nb, mb, descB, descB_distr);
+  auto B_distr = psolver.scatter_matrix(b, 1, *n, descB, descB_distr);
 
   int mp = 1;
   int nq = 1;
@@ -1112,9 +1121,8 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     std::cerr << "gesv not implemented for non-floating types" << '\n';
     expect(false);
   }
-  gather_matrix(A, descA, A_distr.data(), descA_distr, *n, *n);
-  gather_matrix(b, descB, B_distr.data(), descB_distr, 1, *n);
-  Cblacs_gridexit(ictxt);
+  psolver.gather_matrix(A, descA, A_distr.data(), descA_distr, *n, *n);
+  psolver.gather_matrix(b, descB, B_distr.data(), descB_distr, 1, *n);
 }
 
 template<typename P>
