@@ -1017,7 +1017,6 @@ void gather_matrix(P *A, int *descA, P* A_distr, int *descA_distr, int n, int m)
   }
 }
 
-
 template<typename P>
 std::vector<P> scatter_matrix(P *A, int n, int m, int nb, int mb, int *descA, int *descA_distr)
 {
@@ -1076,7 +1075,6 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   expect(*lda >= 1);
   expect(*n >= 0);
 
-  //int myid, numproc;
   int i_negone{-1}, i_zero{0}, i_one{1}, ictxt;
   Cblacs_pinfo(&myid, &numproc);
   nprow = 1;
@@ -1086,7 +1084,6 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
     bool is_found = ((nprow * npcol) == numproc);
     if (is_found) break;
   };
-  std::cout << nprow << " " << npcol << '\n';
   assert( (nprow >= 1) && (npcol >= 1) && (nprow*npcol == numproc) );
   int mb = 256, nb = 256;
   Cblacs_get(i_negone, i_zero, &ictxt);
