@@ -14,14 +14,6 @@
 #endif
 
 #ifdef ASGARD_USE_SLATE
-// extern "C" void slate_sgesv_(const int *n, const int *nrhs, float *a,
-//                             const int *lda, int *ipiv, float *b,
-//                             const int *ldb, int *info);
-
-// extern "C" void slate_dgesv_(const int *n, const int *nrhs, double *a,
-//                             const int *lda, int *ipiv, double *b,
-//                             const int *ldb, int *info);
-
 extern "C" void psgesv_(int *n, int *nrhs, float *a, int *ia, int *ja,
                         int *desca, int *ipiv, float *b, int *ib, int *jb,
                         int *descb, int *info);
@@ -29,13 +21,12 @@ extern "C" void pdgesv_(int *n, int *nrhs, double *a, int *ia, int *ja,
                         int *desca, int *ipiv, double *b, int *ib, int *jb,
                         int *descb, int *info);
 
-extern "C" void slate_dgetrs_(const char *trans, const int *n, const int *nrhs,
-                              double *A, const int *lda, int *ipiv, double *b,
-                              const int *ldb, int *info);
-
-extern "C" void slate_sgetrs_(const char *trans, const int *n, const int *nrhs,
-                             float *A, const int *lda, int *ipiv, float *b,
-                             const int *ldb, int *info);
+extern "C" void psgetrs_(const char* trans, int* n, int* nrhs, float* a, int* ia, int* ja,
+		         int* desca, int* ipiv, float* b, int* ib, int* jb,
+			 int* descb, int* info);
+extern "C" void pdgetrs_(const char* trans, int* n, int* nrhs, double* a, int* ia, int* ja,
+		         int* desca, int* ipiv, double* b, int* ib, int* jb,
+			 int* descb, int* info);
 #endif
 
 auto const ignore = [](auto ignored) { (void)ignored; };
@@ -1148,19 +1139,33 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
   expect(*ldb >= 1);
   expect(*lda >= 1);
   expect(*n >= 0);
+
+
+  parallel_solver<P> psolver;
+
+  int descA[9], descA_distr[9];
+  auto A_distr = psolver.scatter_matrix(A, *n, *n, descA, descA_distr);
+
+  int descB[9], descB_distr[9];
+  auto B_distr = psolver.scatter_matrix(b, 1, *n, descB, descB_distr);
+
+  int mp{1}, nq{1}, i_one{1};
+  char N{'N'};
   if constexpr (std::is_same<P, double>::value)
   {
-    dgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    pdgetrs_(&N, n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    sgetrs_(trans, n, nrhs, A, lda, ipiv, b, ldb, info);
+    psgetrs_(&N, n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else
   { // not instantiated; should never be reached
     std::cerr << "getrs not implemented for non-floating types" << '\n';
     expect(false);
   }
+  psolver.gather_matrix(A, descA, A_distr.data(), descA_distr, *n, *n);
+  psolver.gather_matrix(b, descB, B_distr.data(), descB_distr, 1, *n);
 }
 #endif
 
