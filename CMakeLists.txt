@@ -252,7 +252,10 @@ if (ASGARD_IO_HIGHFIVE)
 endif ()
 
 if (ASGARD_USE_SLATE)
-  find_package(scalapack REQUIRED)	
+  find_package(scalapack REQUIRED)
+  # Uncomment and remove following line after issue #23 is fixed
+  # https://bitbucket.org/icl/slate/issues/23
+  # target_link_libraries (lib_dispatch PRIVATE slate_scalapack_api scalapack MPI::MPI_CXX)
   target_link_libraries (lib_dispatch PRIVATE scalapack  MPI::MPI_CXX)
   target_compile_definitions (lib_dispatch PUBLIC ASGARD_USE_SLATE)
 else ()
