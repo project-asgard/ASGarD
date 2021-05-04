@@ -21,12 +21,12 @@ extern "C" void pdgesv_(int *n, int *nrhs, double *a, int *ia, int *ja,
                         int *desca, int *ipiv, double *b, int *ib, int *jb,
                         int *descb, int *info);
 
-extern "C" void psgetrs_(const char* trans, int* n, int* nrhs, float* a, int* ia, int* ja,
-		         int* desca, int* ipiv, float* b, int* ib, int* jb,
-			 int* descb, int* info);
-extern "C" void pdgetrs_(const char* trans, int* n, int* nrhs, double* a, int* ia, int* ja,
-		         int* desca, int* ipiv, double* b, int* ib, int* jb,
-			 int* descb, int* info);
+extern "C" void psgetrs_(const char *trans, int *n, int *nrhs, float *a,
+                         int *ia, int *ja, int *desca, int *ipiv, float *b,
+                         int *ib, int *jb, int *descb, int *info);
+extern "C" void pdgetrs_(const char *trans, int *n, int *nrhs, double *a,
+                         int *ia, int *ja, int *desca, int *ipiv, double *b,
+                         int *ib, int *jb, int *descb, int *info);
 #endif
 
 auto const ignore = [](auto ignored) { (void)ignored; };
@@ -982,31 +982,37 @@ extern "C"
                 float *, float *, int *, int *, int *);
 }
 
-template <typename P>
-class parallel_solver  {
+template<typename P>
+class parallel_solver
+{
 private:
   int ictxt_, nprow_{1}, npcol_, myrow_, mycol_;
   int mb_, nb_;
+
 public:
-  parallel_solver(int mb = 256, int nb = 256){
+  parallel_solver(int mb = 256, int nb = 256)
+  {
     int i_negone{-1}, i_zero{0};
     mb_ = mb;
     nb_ = nb;
     int myid, numproc;
     Cblacs_pinfo(&myid, &numproc);
     npcol_ = std::sqrt(numproc) + 1;
-    for(; npcol_ >= 1; npcol_--) {
-      nprow_ = numproc/npcol_;
+    for (; npcol_ >= 1; npcol_--)
+    {
+      nprow_        = numproc / npcol_;
       bool is_found = ((nprow_ * npcol_) == numproc);
-      if (is_found) break;
+      if (is_found)
+        break;
     };
-    assert( (nprow_ >= 1) && (npcol_ >= 1) && (nprow_*npcol_ == numproc) );
+    assert((nprow_ >= 1) && (npcol_ >= 1) && (nprow_ * npcol_ == numproc));
     Cblacs_get(i_negone, i_zero, &ictxt_);
     Cblacs_gridinit(&ictxt_, "R", nprow_, npcol_);
     Cblacs_gridinfo(ictxt_, &nprow_, &npcol_, &myrow_, &mycol_);
   }
 
-  void gather_matrix(P *A, int *descA, P* A_distr, int *descA_distr, int n, int m)
+  void
+  gather_matrix(P *A, int *descA, P *A_distr, int *descA_distr, int n, int m)
   {
     // Useful constants
     P zero{0.0E+0}, one{1.0E+0};
@@ -1030,7 +1036,8 @@ public:
     }
   }
 
-  std::vector<P> scatter_matrix(P *A, int n, int m, int *descA, int *descA_distr)
+  std::vector<P>
+  scatter_matrix(P *A, int n, int m, int *descA, int *descA_distr)
   {
     // Useful constants
     P zero{0.0E+0}, one{1.0E+0};
@@ -1048,23 +1055,23 @@ public:
     // blocking parameters m, n,i.e. there is only one block - whole matrix A -
     // which is located on process (0,0) )
     int lld = numroc_(&m, &n, &myrow_, &i_zero, &i_one);
-    lld = std::max(1, lld);
+    lld     = std::max(1, lld);
     descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt_, &lld, &info);
     int lld_distr = numroc_(&m, &n, &myrow_, &i_zero, &nprow_);
-    lld_distr = std::max(1, mp);
-    descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_, &lld_distr,
-              &info);
+    lld_distr     = std::max(1, mp);
+    descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_,
+              &lld_distr, &info);
 
     // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
     if constexpr (std::is_same<P, double>::value)
     {
-      pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
-               &i_one, &i_one, descA_distr);
+      pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero,
+               A_distr.data(), &i_one, &i_one, descA_distr);
     }
     else if constexpr (std::is_same<P, float>::value)
     {
-      psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr.data(),
-               &i_one, &i_one, descA_distr);
+      psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero,
+               A_distr.data(), &i_one, &i_one, descA_distr);
     }
     else
     { // not instantiated; should never be reached
@@ -1075,10 +1082,7 @@ public:
     return A_distr;
   }
 
-  ~parallel_solver()
-  {
-    Cblacs_gridexit(ictxt_);
-  }
+  ~parallel_solver() { Cblacs_gridexit(ictxt_); }
 };
 
 template<typename P>
@@ -1108,11 +1112,13 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
   int mp{1}, nq{1}, i_one{1};
   if constexpr (std::is_same<P, double>::value)
   {
-    pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
+    pdgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv,
+            B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    psgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
+    psgesv_(n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv,
+            B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else
   { // not instantiated; should never be reached
@@ -1140,7 +1146,6 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
   expect(*lda >= 1);
   expect(*n >= 0);
 
-
   parallel_solver<P> psolver;
 
   int descA[9], descA_distr[9];
@@ -1153,11 +1158,13 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
   char N{'N'};
   if constexpr (std::is_same<P, double>::value)
   {
-    pdgetrs_(&N, n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
+    pdgetrs_(&N, n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv,
+             B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else if constexpr (std::is_same<P, float>::value)
   {
-    psgetrs_(&N, n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv, B_distr.data(), &i_one, &nq, descB_distr, info);
+    psgetrs_(&N, n, nrhs, A_distr.data(), &mp, &nq, descA_distr, ipiv,
+             B_distr.data(), &i_one, &nq, descB_distr, info);
   }
   else
   { // not instantiated; should never be reached
