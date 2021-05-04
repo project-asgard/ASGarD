@@ -6,7 +6,9 @@
 #include <iostream>
 #include <type_traits>
 
+#ifdef ASGARD_USE_MPI
 #include "mpi.h"
+#endif
 
 #ifdef ASGARD_USE_CUDA
 #include <cublas_v2.h>
