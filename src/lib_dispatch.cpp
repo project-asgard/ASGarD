@@ -1038,54 +1038,78 @@ public:
     }
   }
 
-  std::vector<P>
-  scatter_matrix(P *A, int n, int m, int *descA, int *descA_distr)
+  void
+  scatter_matrix(P *A, int *descA, P *A_distr, int *descA_distr, int n, int m)
   {
     // Useful constants
     P zero{0.0E+0}, one{1.0E+0};
-    int i_one{1}, i_zero{0};
+    int i_one{1};
     char N{'N'};
-    std::vector<P> A_distr;
-    int info;
-
-    // Compute dimensions of local part of distributed matrix A_distr
-    int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
-    int nq = numroc_(&n, &nb_, &mycol_, &i_zero, &npcol_);
-
-    A_distr.resize(mp * nq);
-    // Initialize discriptors (local matrix A is considered as distributed with
-    // blocking parameters m, n,i.e. there is only one block - whole matrix A -
-    // which is located on process (0,0) )
-    int lld = numroc_(&m, &n, &myrow_, &i_zero, &i_one);
-    lld     = std::max(1, lld);
-    descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt_, &lld, &info);
-    int lld_distr = numroc_(&m, &n, &myrow_, &i_zero, &nprow_);
-    lld_distr     = std::max(1, mp);
-    descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_,
-              &lld_distr, &info);
 
     // Call pdgeadd_ to distribute matrix (i.e. copy A into A_distr)
     if constexpr (std::is_same<P, double>::value)
     {
-      pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero,
-               A_distr.data(), &i_one, &i_one, descA_distr);
+      pdgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr,
+               &i_one, &i_one, descA_distr);
     }
     else if constexpr (std::is_same<P, float>::value)
     {
-      psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero,
-               A_distr.data(), &i_one, &i_one, descA_distr);
+      psgeadd_(&N, &m, &n, &one, A, &i_one, &i_one, descA, &zero, A_distr,
+               &i_one, &i_one, descA_distr);
     }
     else
     { // not instantiated; should never be reached
       std::cerr << "geadd not implemented for non-floating types" << '\n';
       expect(false);
     }
-    // End of ScaLAPACK part. Exit process grid.
-    return A_distr;
+  }
+
+  void descinit(int *descA, int n, int m)
+  {
+    int i_zero{0}, i_one{1}, info;
+    int lld = numroc_(&m, &n, &myrow_, &i_zero, &i_one);
+    lld     = std::max(1, lld);
+    descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt_, &lld, &info);
+  }
+
+  void descinit_distr(int *descA_distr, int n, int m)
+  {
+    int i_zero{0}, info;
+    int lld = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
+    lld     = std::max(1, lld);
+    descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_, &lld,
+              &info);
+  }
+
+  void resize(std::vector<P> &A_distr, int n, int m)
+  {
+    int i_zero{0};
+    int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
+    int nq = numroc_(&n, &nb_, &mycol_, &i_zero, &npcol_);
+    A_distr.resize(mp * nq);
   }
 
   ~parallel_solver() { Cblacs_gridexit(ictxt_); }
 };
+
+// Initialize discriptors (local matrix A is considered as distributed with
+// blocking parameters m, n,i.e. there is only one block - whole matrix A -
+// which is located on process (0,0) )
+
+// int lld = numroc_(&m, &n, &myrow_, &i_zero, &i_one);
+// lld     = std::max(1, lld);
+// descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt_, &lld, &info);
+
+// int lld_distr = numroc_(&m, &n, &myrow_, &i_zero, &nprow_);
+// lld_distr     = std::max(1, lld_distr);
+// descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_,
+//            &lld_distr, &info);
+
+// Compute dimensions of local part of distributed matrix A_distr
+
+// int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
+// int nq = numroc_(&n, &nb_, &mycol_, &i_zero, &npcol_);
+// A_distr.resize(mp * nq);
 
 template<typename P>
 void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
@@ -1105,11 +1129,19 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 
   parallel_solver<P> psolver;
 
+  std::vector<P> A_distr;
+  psolver.resize(A_distr, *n, *n);
   int descA[9], descA_distr[9];
-  auto A_distr = psolver.scatter_matrix(A, *n, *n, descA, descA_distr);
+  psolver.descinit(descA, *n, *n);
+  psolver.descinit_distr(descA_distr, *n, *n);
+  psolver.scatter_matrix(A, descA, A_distr.data(), descA_distr, *n, *n);
 
+  std::vector<P> B_distr;
+  psolver.resize(B_distr, 1, *n);
   int descB[9], descB_distr[9];
-  auto B_distr = psolver.scatter_matrix(b, 1, *n, descB, descB_distr);
+  psolver.descinit(descB, 1, *n);
+  psolver.descinit_distr(descB_distr, 1, *n);
+  psolver.scatter_matrix(b, descB, B_distr.data(), descB_distr, 1, *n);
 
   int mp{1}, nq{1}, i_one{1};
   if constexpr (std::is_same<P, double>::value)
@@ -1150,11 +1182,19 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
 
   parallel_solver<P> psolver;
 
+  std::vector<P> A_distr;
+  psolver.resize(A_distr, *n, *n);
   int descA[9], descA_distr[9];
-  auto A_distr = psolver.scatter_matrix(A, *n, *n, descA, descA_distr);
+  psolver.descinit(descA, *n, *n);
+  psolver.descinit_distr(descA_distr, *n, *n);
+  psolver.scatter_matrix(A, descA, A_distr.data(), descA_distr, *n, *n);
 
+  std::vector<P> B_distr;
+  psolver.resize(B_distr, 1, *n);
   int descB[9], descB_distr[9];
-  auto B_distr = psolver.scatter_matrix(b, 1, *n, descB, descB_distr);
+  psolver.descinit(descB, 1, *n);
+  psolver.descinit_distr(descB_distr, 1, *n);
+  psolver.scatter_matrix(b, descB, B_distr.data(), descB_distr, 1, *n);
 
   int mp{1}, nq{1}, i_one{1};
   char N{'N'};
