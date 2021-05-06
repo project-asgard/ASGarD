@@ -1092,25 +1092,6 @@ public:
   ~parallel_solver() { Cblacs_gridexit(ictxt_); }
 };
 
-// Initialize discriptors (local matrix A is considered as distributed with
-// blocking parameters m, n,i.e. there is only one block - whole matrix A -
-// which is located on process (0,0) )
-
-// int lld = numroc_(&m, &n, &myrow_, &i_zero, &i_one);
-// lld     = std::max(1, lld);
-// descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt_, &lld, &info);
-
-// int lld_distr = numroc_(&m, &n, &myrow_, &i_zero, &nprow_);
-// lld_distr     = std::max(1, lld_distr);
-// descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_,
-//            &lld_distr, &info);
-
-// Compute dimensions of local part of distributed matrix A_distr
-
-// int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
-// int nq = numroc_(&n, &nb_, &mycol_, &i_zero, &npcol_);
-// A_distr.resize(mp * nq);
-
 template<typename P>
 void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
                 int *info)
