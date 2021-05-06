@@ -788,6 +788,8 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
 
   fk::matrix<TestType> const LU_gold = L_gold + U_gold - I_gold;
 
+  fk::vector<TestType> const zero_gold{0., 0., 0.};
+
   SECTION("gesv and getrs")
   {
     fk::matrix<TestType> const A_copy = A_gold;
@@ -828,7 +830,8 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
     fm::getrs(A_copy, x, ipiv, solve_opts::slate);
     if (rank == 0)
     {
-      rmse_comparison(x, X1_gold, tol_factor);
+      auto residual = B1_gold - A_gold*x;
+      rmse_comparison(residual, zero_gold, tol_factor);
     }
   }
 #endif
