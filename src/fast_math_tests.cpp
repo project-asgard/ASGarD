@@ -830,7 +830,7 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
     fm::getrs(A_copy, x, ipiv, solve_opts::slate);
     if (rank == 0)
     {
-      auto residual = B1_gold - A_gold*x;
+      auto residual = B1_gold - A_gold * x;
       rmse_comparison(residual, zero_gold, tol_factor);
     }
   }
