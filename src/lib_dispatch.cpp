@@ -1,6 +1,7 @@
 #include "lib_dispatch.hpp"
 #include "build_info.hpp"
 #include "tools.hpp"
+#include "tensors.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -31,7 +32,6 @@ extern "C" void pdgetrs_(const char *trans, int *n, int *nrhs, double *a,
                          int *ib, int *jb, int *descb, int *info);
 #endif
 
-auto const ignore = [](auto ignored) { (void)ignored; };
 struct device_handler
 {
   device_handler()
@@ -1081,12 +1081,19 @@ public:
               &info);
   }
 
-  void resize(std::vector<P> &A_distr, int n, int m)
+  void resize(fk::matrix<P> &A_distr, int n, int m)
   {
     int i_zero{0};
     int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
     int nq = numroc_(&n, &nb_, &mycol_, &i_zero, &npcol_);
-    A_distr.resize(mp * nq);
+    A_distr.clear_and_resize(mp, nq);
+  }
+
+  void resize(fk::vector<P> &A_distr, int m)
+  {
+    int i_zero{0};
+    int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
+    A_distr.resize(mp);
   }
 
   ~parallel_solver() { Cblacs_gridexit(ictxt_); }
@@ -1110,15 +1117,15 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 
   parallel_solver<P> psolver;
 
-  std::vector<P> A_distr;
+  fk::matrix<P> A_distr;
   psolver.resize(A_distr, *n, *n);
   int descA[9], descA_distr[9];
   psolver.descinit(descA, *n, *n);
   psolver.descinit_distr(descA_distr, *n, *n);
   psolver.scatter_matrix(A, descA, A_distr.data(), descA_distr, *n, *n);
 
-  std::vector<P> B_distr;
-  psolver.resize(B_distr, 1, *n);
+  fk::vector<P> B_distr;
+  psolver.resize(B_distr, *n);
   int descB[9], descB_distr[9];
   psolver.descinit(descB, 1, *n);
   psolver.descinit_distr(descB_distr, 1, *n);
@@ -1163,15 +1170,15 @@ void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
 
   parallel_solver<P> psolver;
 
-  std::vector<P> A_distr;
+  fk::matrix<P> A_distr;
   psolver.resize(A_distr, *n, *n);
   int descA[9], descA_distr[9];
   psolver.descinit(descA, *n, *n);
   psolver.descinit_distr(descA_distr, *n, *n);
   psolver.scatter_matrix(A, descA, A_distr.data(), descA_distr, *n, *n);
 
-  std::vector<P> B_distr;
-  psolver.resize(B_distr, 1, *n);
+  fk::vector<P> B_distr;
+  psolver.resize(B_distr, *n);
   int descB[9], descB_distr[9];
   psolver.descinit(descB, 1, *n);
   psolver.descinit_distr(descB_distr, 1, *n);
