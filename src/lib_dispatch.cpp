@@ -1,7 +1,7 @@
 #include "lib_dispatch.hpp"
 #include "build_info.hpp"
-#include "tools.hpp"
 #include "tensors.hpp"
+#include "tools.hpp"
 
 #include <cmath>
 #include <iostream>
