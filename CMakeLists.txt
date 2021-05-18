@@ -212,6 +212,8 @@ if (build_kron)
   add_dependencies (kronmult_cuda kronmult-ext)
 endif ()
 
+target_link_libraries (lib_dispatch PRIVATE cblacs_grid)
+
 target_link_libraries (adapt PRIVATE distribution elements program_options transformations)
 
 target_link_libraries (basis PRIVATE matlab_utilities quadrature tensors)
