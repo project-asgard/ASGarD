@@ -1,6 +1,5 @@
 #include "lib_dispatch.hpp"
 #include "build_info.hpp"
-#include "cblacs_grid.hpp"
 #include "tensors.hpp"
 #include "tools.hpp"
 
@@ -18,6 +17,7 @@
 #endif
 
 #ifdef ASGARD_USE_SLATE
+#include "cblacs_grid.hpp"
 extern "C" void psgesv_(int *n, int *nrhs, float *a, int *ia, int *ja,
                         int *desca, int *ipiv, float *b, int *ib, int *jb,
                         int *descb, int *info);

@@ -212,7 +212,9 @@ if (build_kron)
   add_dependencies (kronmult_cuda kronmult-ext)
 endif ()
 
-target_link_libraries (lib_dispatch PRIVATE cblacs_grid)
+if (ASGARD_USE_SLATE)
+  target_link_libraries (lib_dispatch PRIVATE cblacs_grid)
+endif ()
 
 target_link_libraries (adapt PRIVATE distribution elements program_options transformations)
 
