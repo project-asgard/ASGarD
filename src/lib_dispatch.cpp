@@ -984,19 +984,12 @@ extern "C"
                 float *, float *, int *, int *, int *);
 }
 
-template<typename P>
-class parallel_solver
+class cblacs_grid
 {
-private:
-  int ictxt_, nprow_{1}, npcol_, myrow_, mycol_;
-  int mb_, nb_;
-
 public:
-  parallel_solver(int mb = 256, int nb = 256)
+  cblacs_grid()
   {
     int i_negone{-1}, i_zero{0};
-    mb_ = mb;
-    nb_ = nb;
     int myid, numproc;
     Cblacs_pinfo(&myid, &numproc);
     npcol_ = std::sqrt(numproc) + 1;
@@ -1012,6 +1005,34 @@ public:
     Cblacs_gridinit(&ictxt_, "R", nprow_, npcol_);
     Cblacs_gridinfo(ictxt_, &nprow_, &npcol_, &myrow_, &mycol_);
   }
+  int get_context() const { return ictxt_; }
+  int get_myrow() const { return myrow_; }
+  int get_mycol() const { return mycol_; }
+  int local_rows(int m, int mb)
+  {
+    int i_zero{0};
+    return numroc_(&m, &mb, &myrow_, &i_zero, &nprow_);
+  }
+  int local_cols(int n, int nb)
+  {
+    int i_zero{0};
+    return numroc_(&n, &nb, &mycol_, &i_zero, &npcol_);
+  }
+  ~cblacs_grid() { Cblacs_gridexit(ictxt_); }
+
+private:
+  int ictxt_, nprow_{1}, npcol_, myrow_, mycol_;
+};
+
+template<typename P>
+class parallel_solver
+{
+private:
+  cblacs_grid grid_;
+  int mb_, nb_;
+
+public:
+  parallel_solver(int mb = 256, int nb = 256) : mb_{mb}, nb_{nb} {}
 
   void
   gather_matrix(P *A, int *descA, P *A_distr, int *descA_distr, int n, int m)
@@ -1066,37 +1087,33 @@ public:
 
   void descinit(int *descA, int n, int m)
   {
-    int i_zero{0}, i_one{1}, info;
-    int lld = numroc_(&m, &n, &myrow_, &i_zero, &i_one);
-    lld     = std::max(1, lld);
-    descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt_, &lld, &info);
+    int i_zero{0}, info;
+    int ictxt = grid_.get_context();
+    int lld   = std::max(1, grid_.local_rows(m, n));
+    descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
   }
 
   void descinit_distr(int *descA_distr, int n, int m)
   {
     int i_zero{0}, info;
-    int lld = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
-    lld     = std::max(1, lld);
-    descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt_, &lld,
+    int ictxt = grid_.get_context();
+    int lld   = std::max(1, grid_.local_rows(m, mb_));
+    descinit_(descA_distr, &m, &n, &mb_, &nb_, &i_zero, &i_zero, &ictxt, &lld,
               &info);
   }
 
   void resize(fk::matrix<P> &A_distr, int n, int m)
   {
-    int i_zero{0};
-    int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
-    int nq = numroc_(&n, &nb_, &mycol_, &i_zero, &npcol_);
+    int mp = grid_.local_rows(m, mb_);
+    int nq = grid_.local_cols(n, nb_);
     A_distr.clear_and_resize(mp, nq);
   }
 
   void resize(fk::vector<P> &A_distr, int m)
   {
-    int i_zero{0};
-    int mp = numroc_(&m, &mb_, &myrow_, &i_zero, &nprow_);
+    int mp = grid_.local_rows(m, mb_);
     A_distr.resize(mp);
   }
-
-  ~parallel_solver() { Cblacs_gridexit(ictxt_); }
 };
 
 template<typename P>
