@@ -184,9 +184,13 @@ if (ASGARD_IO_HIGHFIVE)
   list (APPEND components io)
 endif ()
 
+if (ASGARD_USE_SLATE)
+  list (APPEND components cblacs_grid)
+endif ()
+
 if (ASGARD_USE_MATLAB)
   list(APPEND components matlab_plot)
-endif()
+endif ()
 
 foreach (component IN LISTS components)
   add_library (${component} src/${component}.cpp)
