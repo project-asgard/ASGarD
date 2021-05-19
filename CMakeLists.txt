@@ -185,7 +185,7 @@ if (ASGARD_IO_HIGHFIVE)
 endif ()
 
 if (ASGARD_USE_SLATE)
-  list (APPEND components cblacs_grid)
+  list (APPEND components cblacs_grid parallel_solver)
 endif ()
 
 if (ASGARD_USE_MATLAB)
@@ -213,7 +213,7 @@ if (build_kron)
 endif ()
 
 if (ASGARD_USE_SLATE)
-  target_link_libraries (lib_dispatch PRIVATE cblacs_grid)
+  target_link_libraries (lib_dispatch PRIVATE cblacs_grid parallel_solver)
 endif ()
 
 target_link_libraries (adapt PRIVATE distribution elements program_options transformations)
