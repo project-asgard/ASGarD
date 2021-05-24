@@ -370,6 +370,7 @@ if (ASGARD_BUILD_TESTS)
   # components with MPI-enabled testing
   set (mpi_test_components
     adapt
+    cblacs_grid
     distribution
     time_advance
     fast_math
