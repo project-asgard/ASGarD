@@ -16,7 +16,7 @@
 #include <cuda_runtime.h>
 #endif
 
-#ifdef ASGARD_USE_SLATE
+#ifdef ASGARD_USE_SCALAPACK
 #include "parallel_solver.hpp"
 
 extern "C" void psgesv_(int *n, int *nrhs, float *a, int *ia, int *ja,
@@ -967,10 +967,10 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
   }
 }
 
-#ifdef ASGARD_USE_SLATE
+#ifdef ASGARD_USE_SCALAPACK
 
 template<typename P>
-void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
+void scalapack_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
                 int *info)
 {
   expect(n);
@@ -1022,7 +1022,7 @@ void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
 }
 
 template<typename P>
-void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
+void scalapack_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
                  P *b, int *ldb, int *info)
 {
   expect(trans);
@@ -1171,15 +1171,15 @@ template void getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
                     int *ipiv, double *b, int *ldb, int *info);
 template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
-#ifdef ASGARD_USE_SLATE
-template void slate_gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv,
+#ifdef ASGARD_USE_SCALAPACK
+template void scalapack_gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv,
                          double *b, int *ldb, int *info);
-template void slate_gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv,
+template void scalapack_gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv,
                          float *b, int *ldb, int *info);
 
-template void slate_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
+template void scalapack_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
                           int *ipiv, double *b, int *ldb, int *info);
-template void slate_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
+template void scalapack_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                           int *ipiv, float *b, int *ldb, int *info);
 #endif
 } // namespace lib_dispatch

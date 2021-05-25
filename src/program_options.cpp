@@ -181,10 +181,10 @@ parser::parser(int argc, char **argv)
     {
       solver_str = "direct";
     }
-#ifndef ASGARD_USE_SLATE
-    if (solver_str == "slate")
+#ifndef ASGARD_USE_SCALAPACK
+    if (solver_str == "scalapack")
     {
-      std::cerr << "Invalid solver choice; ASGarD not built with SLATE option "
+      std::cerr << "Invalid solver choice; ASGarD not built with SCALAPACK option "
                    "enabled\n";
       valid = false;
     }

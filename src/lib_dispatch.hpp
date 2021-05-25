@@ -168,13 +168,13 @@ template<typename P>
 void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
            int *ldb, int *info);
 
-#ifdef ASGARD_USE_SLATE
+#ifdef ASGARD_USE_SCALAPACK
 template<typename P>
-void slate_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
+void scalapack_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
                 int *info);
 
 template<typename P>
-void slate_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
+void scalapack_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
                  P *b, int *ldb, int *info);
 #endif
 } // namespace lib_dispatch

@@ -808,14 +808,14 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
     rmse_comparison(x, X1_gold, tol_factor);
   }
 
-#ifdef ASGARD_USE_SLATE
-  SECTION("slate_gesv and slate_getrs")
+#ifdef ASGARD_USE_SCALAPACK
+  SECTION("scalapack_gesv and scalapack_getrs")
   {
     fk::matrix<TestType> const A_copy = A_gold;
     std::vector<int> ipiv(A_copy.nrows());
     fk::vector<TestType> x = B_gold;
 
-    fm::gesv(A_copy, x, ipiv, solve_opts::slate);
+    fm::gesv(A_copy, x, ipiv, solve_opts::scalapack);
 
     TestType const tol_factor =
         std::is_same<TestType, double>::value ? 1e-16 : 1e-7;
@@ -827,7 +827,7 @@ TEMPLATE_TEST_CASE("LU Routines", "[fast_math]", float, double)
     }
     x = B1_gold;
 
-    fm::getrs(A_copy, x, ipiv, solve_opts::slate);
+    fm::getrs(A_copy, x, ipiv, solve_opts::scalapack);
     if (rank == 0)
     {
       auto residual = B1_gold - A_gold * x;
