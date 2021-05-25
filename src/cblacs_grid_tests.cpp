@@ -14,13 +14,13 @@ static distribution_test_init const distrib_test_info;
 
 TEST_CASE("", "[cblacs_grid]")
 {
-  int myrank = get_rank();
+  int myrank    = get_rank();
   int num_ranks = get_num_ranks();
   cblacs_grid grid;
-  int myrow = grid.get_myrow();
-  int mycol = grid.get_mycol();
+  int myrow      = grid.get_myrow();
+  int mycol      = grid.get_mycol();
   int local_rows = grid.local_rows(3, 256);
   int local_cols = grid.local_cols(3, 256);
-  //std::cout << context << ' ' << myrow << ' ' << mycol << ' ' << local_rows << ' ' << local_cols << '\n';
-  //CHECK(false);
+  // std::cout << context << ' ' << myrow << ' ' << mycol << ' ' << local_rows
+  // << ' ' << local_cols << '\n'; CHECK(false);
 }

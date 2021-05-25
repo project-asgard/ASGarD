@@ -970,8 +970,8 @@ void getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
 #ifdef ASGARD_USE_SCALAPACK
 
 template<typename P>
-void scalapack_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb,
-                int *info)
+void scalapack_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b,
+                    int *ldb, int *info)
 {
   expect(n);
   expect(nrhs);
@@ -1023,7 +1023,7 @@ void scalapack_gesv(int *n, int *nrhs, P *A, int *lda, int *ipiv, P *b, int *ldb
 
 template<typename P>
 void scalapack_getrs(char *trans, int *n, int *nrhs, P *A, int *lda, int *ipiv,
-                 P *b, int *ldb, int *info)
+                     P *b, int *ldb, int *info)
 {
   expect(trans);
   expect(n);
@@ -1173,13 +1173,15 @@ template void getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
                     int *ipiv, float *b, int *ldb, int *info);
 #ifdef ASGARD_USE_SCALAPACK
 template void scalapack_gesv(int *n, int *nrhs, double *A, int *lda, int *ipiv,
-                         double *b, int *ldb, int *info);
+                             double *b, int *ldb, int *info);
 template void scalapack_gesv(int *n, int *nrhs, float *A, int *lda, int *ipiv,
-                         float *b, int *ldb, int *info);
+                             float *b, int *ldb, int *info);
 
-template void scalapack_getrs(char *trans, int *n, int *nrhs, double *A, int *lda,
-                          int *ipiv, double *b, int *ldb, int *info);
-template void scalapack_getrs(char *trans, int *n, int *nrhs, float *A, int *lda,
-                          int *ipiv, float *b, int *ldb, int *info);
+template void scalapack_getrs(char *trans, int *n, int *nrhs, double *A,
+                              int *lda, int *ipiv, double *b, int *ldb,
+                              int *info);
+template void scalapack_getrs(char *trans, int *n, int *nrhs, float *A,
+                              int *lda, int *ipiv, float *b, int *ldb,
+                              int *info);
 #endif
 } // namespace lib_dispatch

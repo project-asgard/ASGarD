@@ -184,8 +184,9 @@ parser::parser(int argc, char **argv)
 #ifndef ASGARD_USE_SCALAPACK
     if (solver_str == "scalapack")
     {
-      std::cerr << "Invalid solver choice; ASGarD not built with SCALAPACK option "
-                   "enabled\n";
+      std::cerr
+          << "Invalid solver choice; ASGarD not built with SCALAPACK option "
+             "enabled\n";
       valid = false;
     }
 #endif
