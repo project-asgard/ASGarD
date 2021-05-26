@@ -15,7 +15,8 @@
 // ---------------------------------------------------------------------------
 //
 // the "advect blob 1d" pde in order to highlight usage of adaptivity
-// 1D advect a blob across a domain. Use for feature tracking testing in the adaptiviy.
+// 1D advect a blob across a domain. Use for feature tracking testing in the
+// adaptiviy.
 //
 // 1D test case using advect blob equation, i.e.,
 // df/dt == -v * df/dx
@@ -41,7 +42,7 @@ private:
   static int constexpr num_dims_           = 1;
   static int constexpr num_sources_        = 1;
   static int constexpr num_terms_          = 1;
-  static double constexpr blob_speed_      = 2; //v (matlab)
+  static double constexpr blob_speed_      = 2;   // v (matlab)
   static double constexpr blob_width_      = 0.1; // sig (matlab)
   static bool constexpr do_poisson_solve_  = false;
   static bool constexpr has_analytic_soln_ = true;
@@ -55,13 +56,17 @@ private:
   static fk::vector<P>
   initial_condition_dim0(fk::vector<P> const x, P const t = 0)
   {
-      ignore(t);
-      fk::vector<P> fx(x.size());
-      std::transform(x.begin(), x.end(), fx.begin(),
-              //a_x = @(x,p,t) exp(-(x-p.v*t).^2/p.sig.^2)+exp(-(x-p.v*t+2).^2/p.sig.^2);
-                     [t](P const &x) { return exp(-pow((x-blob_speed_*t),2)/pow(blob_width_,2)) +
-                                              exp(-pow((x-blob_speed_*t+2),2)/pow(blob_width_,2));});
-      return fx;
+    ignore(t);
+    fk::vector<P> fx(x.size());
+    std::transform(
+        x.begin(), x.end(), fx.begin(),
+        // a_x = @(x,p,t)
+        // exp(-(x-p.v*t).^2/p.sig.^2)+exp(-(x-p.v*t+2).^2/p.sig.^2);
+        [t](P const &x) {
+          return exp(-pow((x - blob_speed_ * t), 2) / pow(blob_width_, 2)) +
+                 exp(-pow((x - blob_speed_ * t + 2), 2) / pow(blob_width_, 2));
+        });
+    return fx;
   }
 
   // specify exact solution vectors/time function...
@@ -69,10 +74,14 @@ private:
   {
     ignore(t);
     fk::vector<P> fx(x.size());
-    std::transform(x.begin(), x.end(), fx.begin(),
-                   //a_x = @(x,p,t) exp(-(x-p.v*t).^2/p.sig.^2)+exp(-(x-p.v*t+2).^2/p.sig.^2);
-                   [t](P const &x) { return exp(-pow((x-blob_speed_*t),2)/pow(blob_width_,2)) +
-                                           exp(-pow((x-blob_speed_*t+2),2)/pow(blob_width_,2));});
+    std::transform(
+        x.begin(), x.end(), fx.begin(),
+        // a_x = @(x,p,t)
+        // exp(-(x-p.v*t).^2/p.sig.^2)+exp(-(x-p.v*t+2).^2/p.sig.^2);
+        [t](P const &x) {
+          return exp(-pow((x - blob_speed_ * t), 2) / pow(blob_width_, 2)) +
+                 exp(-pow((x - blob_speed_ * t + 2), 2) / pow(blob_width_, 2));
+        });
     return fx;
   }
 
@@ -103,12 +112,12 @@ private:
   // g-funcs for terms (optional)
   static P g_func_0(P const x, P const time)
   {
-      /* From matlab
-       *g1 = @(x,p,t,dat) x.*0-p.v;
-       *pterm1 = GRAD(num_dims,g1,-1,'P','P');
-       * */
-    ignore(x);// suppress compiler warnings
-    ignore(time);// suppress compiler warnings
+    /* From matlab
+     *g1 = @(x,p,t,dat) x.*0-p.v;
+     *pterm1 = GRAD(num_dims,g1,-1,'P','P');
+     * */
+    ignore(x);    // suppress compiler warnings
+    ignore(time); // suppress compiler warnings
     return -blob_speed_;
   }
 
