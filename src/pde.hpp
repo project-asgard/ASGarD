@@ -12,6 +12,10 @@
 #include "program_options.hpp"
 #include "quadrature.hpp"
 
+#include "pde/pde_advect_blob1.hpp"
+#include "pde/pde_advect_blob2.hpp"
+#include "pde/pde_advect_blob3.hpp"
+#include "pde/pde_advect_blob4.hpp"
 #include "pde/pde_base.hpp"
 #include "pde/pde_continuity1.hpp"
 #include "pde/pde_continuity2.hpp"
@@ -46,6 +50,14 @@ std::unique_ptr<PDE<P>> make_PDE(parser const &cli_input)
 {
   switch (cli_input.get_selected_pde())
   {
+  case PDE_opts::advect_blob_1:
+    return std::make_unique<PDE_advect_blob_1d<P>>(cli_input);
+  case PDE_opts::advect_blob_2:
+    return std::make_unique<PDE_advect_blob_2d<P>>(cli_input);
+  case PDE_opts::advect_blob_3:
+    return std::make_unique<PDE_advect_blob_3d<P>>(cli_input);
+  case PDE_opts::advect_blob_4:
+    return std::make_unique<PDE_advect_blob_4d<P>>(cli_input);
   case PDE_opts::continuity_1:
     return std::make_unique<PDE_continuity_1d<P>>(cli_input);
   case PDE_opts::continuity_2:
