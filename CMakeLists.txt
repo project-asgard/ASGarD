@@ -372,6 +372,7 @@ if (ASGARD_BUILD_TESTS)
     adapt
     cblacs_grid
     distribution
+    parallel_solver
     time_advance
     fast_math
   )
