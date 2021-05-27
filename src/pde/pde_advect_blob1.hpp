@@ -40,7 +40,7 @@ private:
   // everything is specified correctly
 
   static int constexpr num_dims_           = 1;
-  static int constexpr num_sources_        = 1;
+  static int constexpr num_sources_        = 0;
   static int constexpr num_terms_          = 1;
   static double constexpr blob_speed_      = 2;   // v (matlab)
   static double constexpr blob_width_      = 0.1; // sig (matlab)
@@ -89,17 +89,7 @@ private:
 
   // specify source functions...
 
-  // source 0
-  static fk::vector<P> source_0_dim0(fk::vector<P> const x, P const t = 0)
-  {
-    ignore(t);
-    fk::vector<P> fx(x.size());
-    std::transform(x.begin(), x.end(), fx.begin(),
-                   [](P const &x) { return 0.; });
-    return fx;
-  }
-
-  static P source_0_time(P const time) { return 0.; }
+  // N/A
 
   static P get_dt_(dimension<P> const &dim)
   {
