@@ -67,7 +67,7 @@ void parallel_solver<P>::descinit(int *descA, int n, int m)
 {
   int i_zero{0}, info;
   int ictxt = grid_.get_context();
-  int lld   = std::max(1, grid_.local_rows(m, n));
+  int lld   = std::max(1, grid_.local_rows1(m, n));
   descinit_(descA, &m, &n, &m, &n, &i_zero, &i_zero, &ictxt, &lld, &info);
 }
 

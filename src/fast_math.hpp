@@ -263,7 +263,7 @@ void getrs(fk::matrix<P, amem> const &A, fk::vector<P, bmem> &B,
   {
     lib_dispatch::getrs(&trans, &rows_A, &cols_B, A.data(), &lda, ipiv.data(),
                         B.data(), &ldb, &info);
-#ifdef ASGARD_USE_SCALAPCK
+#ifdef ASGARD_USE_SCALAPACK
   }
   else if (opt == solve_opts::scalapack)
   {

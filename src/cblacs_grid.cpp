@@ -32,6 +32,12 @@ cblacs_grid::cblacs_grid()
   Cblacs_gridinfo(ictxt_, &nprow_, &npcol_, &myrow_, &mycol_);
 }
 
+int cblacs_grid::local_rows1(int m, int mb)
+{
+  int i_zero{0}, i_one{1};
+  return numroc_(&m, &mb, &myrow_, &i_zero, &i_one);
+}
+
 int cblacs_grid::local_rows(int m, int mb)
 {
   int i_zero{0};

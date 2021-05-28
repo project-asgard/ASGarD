@@ -78,8 +78,8 @@ TEMPLATE_TEST_CASE("", "[parallel_solver]", float, double)
     REQUIRE(B_distr.size() == 2);
   }
 
-  int descB[9]; //, descB_distr[9];
+  int descB[9], descB_distr[9];
   solver.descinit(descB, 1, n);
-  // solver.descinit_distr(descB_distr, 1, n);
-  // solver.scatter_matrix(B.data(), descB, B_distr.data(), descB_distr, 1, n);
+  solver.descinit_distr(descB_distr, 1, n);
+  solver.scatter_matrix(B.data(), descB, B_distr.data(), descB_distr, 1, n);
 }
