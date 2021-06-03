@@ -18,8 +18,8 @@ TEST_CASE("Generating a cblacs grid.", "[cblacs_grid]")
   int num_ranks = get_num_ranks();
   int npcol     = std::sqrt(num_ranks);
   cblacs_grid grid;
-  int myrow      = grid.get_myrow();
-  int mycol      = grid.get_mycol();
+  int myrow = grid.get_myrow();
+  int mycol = grid.get_mycol();
   REQUIRE(myrank / npcol == myrow);
   REQUIRE(myrank % npcol == mycol);
 
