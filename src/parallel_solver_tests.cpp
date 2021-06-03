@@ -20,7 +20,7 @@ TEMPLATE_TEST_CASE("", "[parallel_solver]", float, double)
   fk::matrix<TestType> const A{
       {0., 0., 1., 1.}, {0., 0., 1., 1.}, {2., 2., 3., 3.}, {2., 2., 3., 3.}};
 
-  fk::vector<TestType> const B{0., 1., 2., 3.};
+  fk::vector<TestType> const B{0., 0., 2., 2.};
 
   parallel_solver<TestType> solver(2, 2);
 
@@ -82,4 +82,21 @@ TEMPLATE_TEST_CASE("", "[parallel_solver]", float, double)
   solver.descinit(descB, 1, n);
   solver.descinit_distr(descB_distr, 1, n);
   solver.scatter_matrix(B.data(), descB, B_distr.data(), descB_distr, 1, n);
+
+  if (num_ranks == 1)
+  {
+    for (int i = 0; i < n; ++i)
+    {
+      REQUIRE_THAT(B(i),
+                   Catch::Matchers::WithinRel(B_distr(i), TestType{0.001}));
+    }
+  }
+  else if (myrank % 2 == 0)
+  {
+    for (int i = 0; i < 2; ++i)
+    {
+      REQUIRE_THAT(B_distr(i),
+                   Catch::Matchers::WithinRel(myrank, TestType{0.001}));
+    }
+  }
 }
