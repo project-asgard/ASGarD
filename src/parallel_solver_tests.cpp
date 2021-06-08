@@ -17,15 +17,18 @@ TEMPLATE_TEST_CASE("", "[parallel_solver]", float, double)
   int myrank    = get_rank();
   int num_ranks = get_num_ranks();
 
-  fk::matrix<TestType> const A{
+  fk::matrix<TestType> A{
       {0., 0., 1., 1.}, {0., 0., 1., 1.}, {2., 2., 3., 3.}, {2., 2., 3., 3.}};
+
+  if (myrank != 0)
+    A.clear_and_resize(0,0);
 
   fk::vector<TestType> const B{0., 0., 2., 2.};
 
   parallel_solver<TestType> solver(2, 2);
 
-  int n = A.ncols();
-  int m = A.nrows();
+  int n = 4;
+  int m = 4;
   REQUIRE(n == m);
   fk::matrix<TestType> A_distr;
   solver.resize(A_distr, n, m);
