@@ -86,6 +86,11 @@ void parallel_solver<P>::resize(fk::matrix<P> &A_distr, int n, int m)
 {
   int mp = grid_.local_rows(m, mb_);
   int nq = grid_.local_cols(n, nb_);
+  if (mp == 0 || nq == 0)
+  {
+    mp = 0;
+    nq = 0;
+  }
   A_distr.clear_and_resize(mp, nq);
 }
 
