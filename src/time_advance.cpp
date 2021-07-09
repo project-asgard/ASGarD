@@ -304,7 +304,7 @@ implicit_advance(PDE<P> const &pde,
       fm::gesv(A, x, ipiv, solver);
       return x;
       break;
-    case solve_opts::slate:
+    case solve_opts::scalapack:
       if (ipiv.size() != static_cast<unsigned long>(A.nrows()))
         ipiv.resize(A.nrows());
       fm::gesv(A, x, ipiv, solver);
@@ -322,7 +322,7 @@ implicit_advance(PDE<P> const &pde,
     fm::getrs(A, x, ipiv, solver);
     return x;
     break;
-  case solve_opts::slate:
+  case solve_opts::scalapack:
     fm::getrs(A, x, ipiv, solver);
     return x;
     break;

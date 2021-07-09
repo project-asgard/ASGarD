@@ -209,12 +209,12 @@ void gesv(fk::matrix<P, amem> const &A, fk::vector<P, bmem> &B,
   {
     lib_dispatch::gesv(&rows_A, &cols_B, A.data(), &lda, ipiv.data(), B.data(),
                        &ldb, &info);
-#ifdef ASGARD_USE_SLATE
+#ifdef ASGARD_USE_SCALAPACK
   }
-  else if (opt == solve_opts::slate)
+  else if (opt == solve_opts::scalapack)
   {
-    lib_dispatch::slate_gesv(&rows_A, &cols_B, A.data(), &lda, ipiv.data(),
-                             B.data(), &ldb, &info);
+    lib_dispatch::scalapack_gesv(&rows_A, &cols_B, A.data(), &lda, ipiv.data(),
+                                 B.data(), &ldb, &info);
 #endif
   }
   else
@@ -263,12 +263,12 @@ void getrs(fk::matrix<P, amem> const &A, fk::vector<P, bmem> &B,
   {
     lib_dispatch::getrs(&trans, &rows_A, &cols_B, A.data(), &lda, ipiv.data(),
                         B.data(), &ldb, &info);
-#ifdef ASGARD_USE_SLATE
+#ifdef ASGARD_USE_SCALAPACK
   }
-  else if (opt == solve_opts::slate)
+  else if (opt == solve_opts::scalapack)
   {
-    lib_dispatch::slate_getrs(&trans, &rows_A, &cols_B, A.data(), &lda,
-                              ipiv.data(), B.data(), &ldb, &info);
+    lib_dispatch::scalapack_getrs(&trans, &rows_A, &cols_B, A.data(), &lda,
+                                  ipiv.data(), B.data(), &ldb, &info);
 #endif
   }
   else
